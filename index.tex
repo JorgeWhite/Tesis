@@ -1,0 +1,855 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+ 12pt,
+ letterpaper,
+]{article}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{setspace}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\onehalfspacing
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\textbf{Análisis y optimización matemática de modelos con Naive Bayes en
+sistemas de almacenamiento para el proyecto Conductome.}
+
+\subsection{Índice}\label{uxedndice}
+
+\textbf{Capítulo 1 Introducción.}
+
+Contexto del proyecto Conductoma y Project42.
+
+Estructura de la tesis.
+
+Problema matemático y computacional.
+
+Objetivos.
+
+\textbf{Capítulo 2 Fundamentos matemáticos.}
+
+Minería de datos.
+
+Conceptos básicos.
+
+Pruebas de hipótesis.
+
+Evaluación de modelos.
+
+Cross validation, curva ROC.
+
+\textbf{Capítulo 3 Modelado matemático de Project42\\
+}Naive Bayes.
+
+Construcción de epsilon.
+
+Usando score y epsilon para la construcción de modelos predictivos.
+
+Definición formal del conjunto de datos.
+
+Discretización por cuantiles.
+
+Representación de datos.
+
+Formalización del clasificador.
+
+\textbf{Capítulo 4 Estrategias de optimización}
+
+Complejidad algorítmica.
+
+Análisis teórico de cada enfoque para la recuperación de datos.
+
+Elastic Search vs GraphQL vs Clickhouse
+
+Análisis de complejidad temporal y espacial.
+
+\textbf{Capítulo 5 Resultados experimentales}
+
+Comparación de tiempos de construcción.
+
+Análisis de estabilidad estadística.
+
+Validación empírica de lo teórico.
+
+\textbf{Capítulo 6 Conclusiones}
+
+Resultados principales
+
+Limitaciones.
+
+Trabajo futuro.
+
+\section{Capítulo 1. Introducción}\label{capuxedtulo-1.-introducciuxf3n}
+
+\subsection{\texorpdfstring{\textbf{1 Contexto del proyecto Conductoma y
+Project42.}}{1 Contexto del proyecto Conductoma y Project42.}}\label{contexto-del-proyecto-conductoma-y-project42.}
+
+La idea principal del proyecto Conductome y de Project42 es,
+considerando que todo lo que nos rodea está ahí por una cadena de
+decisiones elegidas por todos los habitantes de este planeta, busca
+enfocarse en los problemas que enfrenta la humanidad actualmente como
+obesidad, hipertensión y diferentes enfermedades crónicas. Mediante un
+proceso de inferencia estadística, se busca entender mejor cuales son
+los motivos por los que estos problemas ocurren, desde el punto de vista
+de la conducta humana.
+
+Una de las claves para la construcción del conductome es contemplar
+datos que trascienden las disciplinas, mismas que a primera vista
+pudieran no tener mucha relación, al considerarse como conjunto puedan
+revelar patrones de comportamiento que deriven en alguno de los
+problemas mencionados anteriormente.
+
+Sabemos que algunos factores de riesgo importantes para la obesidad van
+desde lo genético hasta lo económico y político. Conductome busca
+aportar factores considerando la conducta humana, comportamientos poco
+saludables durante largos periodos. Comportamientos que a su vez están
+afectados por nuestro entorno, ambiente obesogénico en el que vivimos y
+por la percepción del mundo y de nosotros mismos.
+
+Desde el punto de vista matemático, se puede abordar el problema usando
+inferencia estadística sobre los datos disponibles. Consideramos un
+conjunto de variables que describen la conducta y características
+individuales de una población y fijamos una cierta clase objetivo
+usualmente asociada a un padecimiento de salud como diabetes o
+hipertensión.
+
+Project42 busca saber si una selección de variables explica ``bien'' o
+``mal'' a la clase dada, mediante el uso de métricas como el Epsilon y
+Score, calculados a partir de probabilidades condicionales asociadas a
+cada categoría se puede concluir sin interpretación que tan bien se
+explica la clase (o la no clase).
+
+Los detalles formales del modelo, así como de los métodos de estimación
+y métricas usadas para evaluar la capacidad explicativa de las
+variables, se desarrollarán con más detalle en capítulos posteriores.
+
+La parte de la implementación computacional puede llegar a ser compleja
+en estos modelos como se verá más adelante. Sin embargo parte del
+objetivo de este trabajo es analizar y optimizar desde la recolección de
+datos hasta el procesamiento de éstos, con el fin de lograr calcular las
+métricas Epsilon y Score en un tiempo mucho menor al que actualmente se
+puede conseguir.
+
+\subsection{2 Estructura de la tesis.}\label{estructura-de-la-tesis.}
+
+El trabajo aquí presentado se organiza de la siguiente manera. En el
+capítulo 1 se trata de introducir al lector al proyecto Conductome así
+como a Project42, su contexto e idea general.
+
+En el capítulo 2 se ven los conceptos matemáticos necesarios para el
+completo entendimiento de los proyectos, incluyendo teorema de Bayes,
+discretización de variables y la definición de métricas explicativas
+usadas en Project42 como el epsilon y score de una categoría, entre
+otros.
+
+En el capítulo 3 se formaliza el modelo en particular usado en
+Project42, se formalizan las poblaciones utilizadas, las variables
+objetivo, variables dependientes e independientes.
+
+En el capítulo 4 se analiza la actual implementación de este modelo en
+la plataforma en línea y se proponen diferentes soluciones tanto en la
+recuperación de los datos, así como el manejo y flujo de datos para la
+construcción de las métricas epsilon y score.
+
+En el capítulo 5 vemos los resultados obtenidos de la implementación de
+las soluciones propuestas. Evaluando y analizando resultados en el
+performance reales para poder concluir cuál es la solución más eficiente
+estadísticamente.
+
+En el capítulo 6 el trabajo concluye con una discusión de los
+resultados, posibles mejoras y limitaciones de la versión actual y
+propuestas a futuro.
+
+\subsection{3 Problema matemático y
+computacional.}\label{problema-matemuxe1tico-y-computacional.}
+
+\textbf{Detallar problema matemático, calculos de probabilidades, etc.}
+
+Podremos notar que generar las métricas Epsilon y Score, usadas para
+evaluar que tan bien explican las diferentes variables y sus categorías
+una clase dada, requiere del cálculo repetido de probabilidades
+condicionales.
+
+La antigua implementación de Project42 hacía este proceso
+computacionalmente costoso, lo cual limitaba la exploración eficiente de
+diferentes variables para explicar alguna clase dada, pues los tiempos a
+esperar para obtener las métricas podía rebasar el minuto de espera,
+dependiendo de la cantidad de variables a consultar.
+
+\subsection{3 Objetivos.}\label{objetivos.}
+
+Tenemos como objetivos principales, explicar la teoría detrás de los
+proyectos Conductome y Project42, entender el porqué las métricas
+Epsilon y Score funcionan. Posteriormente pasar a analizar y optimizar
+el proceso de obtención de estas métricas, mediante la reformulación del
+flujo de datos, representación de éstos y su procesamiento con el fin de
+reducir el costo computacional sin alterar ninguna de las propiedades
+del modelo original.
+
+Objetivos específicos:
+
+1.- Formular matemáticamente el modelo estadístico usado en Project42.
+
+2.- Analizar la complejidad temporal y espacial del algoritmo que
+calcula epsilon y score dados un conjunto de variables y una clase.
+
+3.- Proponer una implementación en pseudocódigo del algoritmo encargado
+de calcular las métricas Epsilon y Score.
+
+4.- Comparar teórica y empíricamente el desempeño de los diferentes
+algoritmos propuestos, así como de diferentes filosofías de diseño para
+la recuperación de los datos usados para el cálculo de Epsilon y Score.
+
+\section{Capítulo 2. Preliminares
+Matemáticos.}\label{capuxedtulo-2.-preliminares-matemuxe1ticos.}
+
+En este capítulo se presentan los fundamentos matemáticos necesarios
+para el desarrollo del trabajo. Se asume que el lector cuenta con
+conocimientos básicos de probabilidad, estadística y análisis de
+algoritmos, ya que se profundizará únicamente los conceptos directamente
+relacionados con los proyectos Conductome y Project42.
+
+Empezando con conceptos como minería de datos, con el fin de
+contextualizar el uso de modelos estadísticos en conjuntos de datos con
+muchas variables (multidimensionales) . Después se ven conceptos básicos
+de probabilidad y estadística que fundamentan los modelos de
+clasificación usando las métricas Epsilon y Score.
+
+Se introduce el teorema de Bayes así como del clasificador basado en
+éste Naive Bayes, el cual es fundamental para la construcción del
+sistema usado en Project42. Se analizan sus variantes para casos
+continuos y limitantes en términos de clasificación.
+
+Después se explica a groso modo la idea de Naive Bayes Generalizado,
+trabajo desarrollado por el Dr, Stephens que explora qué pasa en un
+modelo de Naive Bayes cuando no se supone la independencia de variables.
+Se definen formalmente las métricas Epsilon y Score anteriormente
+mencionadas y se analiza su desempeño al usarse para la creación de un
+clasificador binario.
+
+Finalmente se desarrollan algunos criterios para la evaluación de
+modelos, es decir, buscamos formas para concluir si un modelo es
+``bueno'' para clasificar independientemente de sus datos. Así como
+nociones de complejidad algorítmica, útiles para determinar el costo
+computacional de los algoritmos posteriormente propuestos.
+
+\subsection{2.1 Minería de datos.}\label{mineruxeda-de-datos.}
+
+Podemos definir a la minería de datos como una rama del análisis de
+datos que se encarga de encontrar patrones ``ocultos''. Con ayuda del
+poder de cómputo actual la minería de datos es capaz de transformar un
+conjunto de datos en conocimiento práctico, el cual puede ser utilizado
+para determinar conductas de consumo, o consecuencias por una toma de
+decisiones empresariales, lo cual es de extrema utilidad para las
+empresas privadas y que puedan aumentar sus márgenes de beneficio.
+
+Una gran diferencia entre la minería de datos y otros métodos de
+análisis más clásicos, son la cantidad de variables y observaciones
+utilizadas para obtener conclusiones. Mientras que un acercamiento por
+análisis más clásico requiere de unos supuestos bien definidos y un
+número reducido de variables, en la minería de datos usualmente se
+trabaja con bases de datos con una gran cantidad de variables (cientos o
+incluso miles) donde no siempre se pueden garantizar supuestos como la
+independencia.
+
+En el caso de Project42 y Conductome, se usa la minería de datos para
+entender mejor el alto porcentaje de personas con enfermedades
+cardiovasculares como obesidad e hipertensión.
+
+\subsection{2.2 Conceptos básicos.}\label{conceptos-buxe1sicos.}
+
+\textbf{Axiomas de probabilidad.}
+
+Recordemos que un axioma es una proposición que se toma como verdadera y
+sobre el cual se fundamentan diferentes resultados. Decimos que $\mathbb{P}$ es una
+función de probabilidad si cumple con los siguientes axiomas.
+
+Sea $A$ un subconjunto de $\Omega$.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  $\mathbb{P}(A) \geq 0$
+\item
+  $\mathbb{P}(\Omega) = 1$
+\item
+  La probabilidad de la union numerable de subconjuntos ajenos dos a dos
+  es igual a la suma de las probabilidades individuales. A esta
+  propiedad se le llama aditividad.
+\end{enumerate}
+
+\textbf{Sigma-álgebra.}
+
+La idea de una sigma-álgebra es un conjunto que agrupa a todos los
+eventos de un mismo experimento aleatorio. Aunque a primera vista estos
+conjuntos parecen bastante abstractos, son extremadamente útiles para
+los posteriores cálculos de probabilidades.
+
+Decimos que $F$ es una sigma-álgebra de subconjuntos de un conjunto $\Omega$ si
+cumple las siguientes condiciones:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  $\Omega \in F$
+\item
+  Si $A \in F$ entonces $\Omega \setminus A \in F$ (el complemento pertenece a $\Omega$)
+\item
+  Si $A_1, A_2, \ldots \in F$ entonces la unión numerable pertenece a $F$
+\end{enumerate}
+
+A los elementos de F se les llama eventos.
+
+Un par de sigma-álgebras inmediatas son $\{\emptyset, \Omega\}$ y $\mathbb{P}(\Omega)$, el conjunto
+potencia de omega.
+
+Con este par de conceptos podemos dar paso a la definición de un espacio
+de probabilidad para un experimento aleatorio.
+
+Un espacio de probabilidad es una terna $(\Omega, F, \mathbb{P})$ donde $\Omega$ es un
+conjunto, $F$ es una sigma-álgebra de subconjuntos de $\Omega$ y $\mathbb{P}$ es una función
+de probabilidad definida sobre F.
+
+\textbf{Sigma álgebra de Borel.}
+
+\textbf{Probabilidad condicional.}
+
+La probabilidad condicional es un concepto sencillo pero que es muy útil
+para el cálculo de probabilidades, pues ayuda a reducir ciertas
+probabilidades a expresiones más sencillas.
+
+Sean $A$ y $B$ dos eventos tal que $\mathbb{P}(B) > 0$.
+
+Definimos la probabilidad condicional del evento $A$ dado $B$, $\mathbb{P}(A\mid B)$,
+como:
+
+$$
+\mathbb{P}(A\mid B) = \frac{\mathbb{P}(A\cap B)}{\mathbb{P}(B)}
+$$
+
+La idea intuitiva de la probabilidad condicional es considerar un evento
+B que ya ha ocurrido y ver cómo esta información adicional influye sobre
+la probabilidad de A.
+
+Uno puede considerar que usar la probabilidad condicional $\mathbb{P}(A\mid B)$
+es como reducir el espacio muestral $\Omega$ al evento $B$, de tal forma que
+cualquier evento que ocurra fuera de B tiene probabilidad condicional
+cero.
+
+\textbf{Variable aleatoria discreta.}
+
+Sea $(\Omega, F, \mathbb{P})$ un espacio de probabilidad. Definimos una variable
+aleatoria $X$ como una transformación del espacio de resultados $\Omega$ al
+conjunto de números reales, esto es,
+
+$X:\Omega \to \mathbb{R}$ tal que para cualquier elemento de la sigma
+álgebra de Borel $B$, la imagen inversa $X^{-1}(B) \in F$.
+
+(Notación: $(X \in A) = \{w \in \Omega \mid X(w) \in A\}$, que en otras
+palabras es la imagen inversa de $A$ bajo $X$. De igual manera con $(X \in (a,
+b)) = \{w \in \Omega \mid a < X(w) < b\}$.)
+
+Detrás de esta definición que puede parecer muy abstracta, podemos
+considerar a las variables aleatorias como una pregunta o medición a los
+resultados de un experimento aleatorio y cuya respuesta es un número
+real. Para ilustrar la idea veamos un par de ejemplos.
+
+Una observación importante es que cuando $\Omega$ es a lo mas numerable y $F =
+\mathbb{P}(\Omega)$, entonces cualquier función $X:\Omega \to \mathbb{R}$ cumple con la
+definición de ser variable aleatoria.
+
+\textbf{Ejemplo 1.}
+
+Consideremos el experimento aleatorio de un volado, esto es, lanzar una
+moneda equilibrada al aire y ver cuál es la cara que está mirando hacía
+arriba.
+
+Denotemos por ``Cara'' y ``Cruz'' a los dos diferentes lados de la
+moneda, con esto construimos el espacio muestral $\Omega = \{\text{Cara},
+\text{Cruz}\}$ y la sigma álgebra $F = \mathbb{P}(\Omega)$, definimos a la función $X$ de la
+siguiente manera:
+
+$X:F \to \mathbb{R}$; $X(\text{Cruz}) = 1$ y $X(\text{Cara}) = 0$.
+
+Por la observación de arriba se sigue que X cumple con ser variable
+aleatoria. Con esto podemos empezar a calcular algunas probabilidades.
+
+$\mathbb{P}(X = 1) = \mathbb{P}(\{w \in \Omega \mid X(w) = 1\}) = \mathbb{P}(\{\text{Cruz}\}) = \tfrac{1}{2}$
+
+$\mathbb{P}(X \in [1, 2)) = \mathbb{P}(\{w \in \Omega \mid 1 \le X(w) < 2\})
+= \mathbb{P}(\{\text{Cruz}\}) = \tfrac{1}{2}$
+
+$\mathbb{P}(X \in (10, 20)) = \mathbb{P}(\{w \in \Omega \mid 10 < X(w) <
+20\}) = \mathbb{P}(\emptyset) = 0$
+
+$\mathbb{P}(X < -1) = \mathbb{P}(\{w \in \Omega \mid X(w) < -1\}) =
+\mathbb{P}(\emptyset) = 0$
+
+$\mathbb{P}(X > 0) = \mathbb{P}(\{w \in \Omega \mid 0 < X(w)\}) =
+\mathbb{P}(\{\text{Cruz}, \text{Cara}\}) = 1$
+
+\textbf{Ejemplo 2.}
+
+Consideremos el experimento aleatorio de lanzar dos dados equilibrados.
+Aquí nuestro espacio muestral queda definido por pares ordenados (a,b)
+de la siguiente manera:
+
+$\Omega = \{1, 2, 3, 4, 5, 6\} \times \{1, 2, 3, 4, 5, 6\} = \{(a, b) \mid a,
+b \in \{1, 2, 3, 4, 5, 6\}\}$
+
+La sigma-álgebra de $\Omega$ es $F = \mathbb{P}(\Omega)$, la potencia de $\Omega$.
+
+Y la función de probabilidad considera dos dados justos y la definimos
+como $\mathbb{P}(\{(a, b)\}) = \tfrac{1}{36}$ para todo $(a,b)$ en $\Omega$.
+
+Definamos la variable aleatoria que se fije en la suma de los dados. Sea
+$S: \Omega \to \mathbb{R}$; $S((a, b)) = a + b$.
+
+Con esto, podemos calcular algunas probabilidades:
+
+$\mathbb{P}(S = 7) = \mathbb{P}(\{(a, b) \in \Omega \mid a + b = 7\}) = \mathbb{P}(\{(1, 6), (2, 5),
+(3, 4), (4, 3), (5, 2), (6, 1)\}) = \tfrac{6}{36}$, este último paso por
+aditividad de $\mathbb{P}$. Por lo tanto $\mathbb{P}(S = 7) = \tfrac{1}{6}$.
+
+A pesar del nombre, una variable aleatoria no es variable ni aleatoria,
+pero el nombre se justifica al considerar que los diferentes resultados
+de un experimento aleatorio son los diferentes números reales x que la
+función X puede tomar.
+
+Espacio de probabilidad discreto.
+
+Sea $(\Omega,F,\mathbb{P})$ un espacio de probabilidad, donde $\Omega$ es un conjunto finito o
+numerable de resultados. $F$ es la sigma-álgebra de subconjuntos de $\Omega$
+y $\mathbb{P}$ es una función de probabilidad sobre $F$.
+
+En el contexto de este trabajo se considerarán únicamente espacios de
+probabilidad discretos. \textbf{** Investigar por qué es importante que
+NB funciona mejor con espacios discretos.}
+
+\subsection{2.? Teorema de Bayes.}\label{teorema-de-bayes.}
+
+El teorema de Bayes es uno de esos resultados fundamentales en la teoría
+de la probabilidad, ya que, permite calcular probabilidades
+condicionales en términos de la probabilidad condicional invertida, es
+decir, se pueden calcular probabilidades condicionales a partir de la
+observación de evidencia.
+
+En el contexto de Project42, se usa el teorema de Bayes para calcular
+que tan probable es que una persona pertenezca a una clase de interés
+dado un conjunto de variables explicativas, probabilidad que
+eventualmente será útil para la construcción de epsilon y score.
+
+\textbf{Teorema de Bayes.}
+
+Sean $A$ y $B$ dos eventos tales que $\mathbb{P}(B) > 0$. Entonces:
+
+$\mathbb{P}(A \mid B) = \dfrac{\mathbb{P}(B \mid A)\,\mathbb{P}(A)}{\mathbb{P}(B)}$
+
+\textbf{Demostración:}
+
+Por definición de probabilidad condicional, tenemos que:
+
+$\mathbb{P}(A \mid B) = \dfrac{\mathbb{P}(A \cap B)}{\mathbb{P}(B)}$
+
+Y que, $\mathbb{P}(B \mid A) = \dfrac{\mathbb{P}(B \cap A)}{\mathbb{P}(A)} = \dfrac{\mathbb{P}(A \cap B)}{\mathbb{P}(A)}$
+
+Despejando $\mathbb{P}(A \cap B)$ de esta última expresión tenemos:
+
+$\mathbb{P}(A \cap B) = \mathbb{P}(B \mid A)\,\mathbb{P}(A)$
+
+Y sustituyendo en la primera expresión:
+
+$\mathbb{P}(A \mid B) = \dfrac{\mathbb{P}(B \mid A)\,\mathbb{P}(A)}{\mathbb{P}(B)}$
+
+En esta expresión, es común encontrar que a los términos se les denomine
+de la siguiente forma:
+
+$\mathbb{P}(A)$ la probabilidad a priori.
+
+$\mathbb{P}(A \mid B)$ la probabilidad a posterior.
+
+$\mathbb{P}(B \mid A)$ se le denomina verosimilitud.
+
+Con este resultado podemos considerar que la probabilidad de una
+hipótesis se actualiza al agregarse nueva evidencia. En el caso de
+Project42, la hipotesis corresponde con la pertenencia de un individuo a
+cierta clase (individuo con diabetes, obesidad, sobrepeso, etc), y la
+evidencia agregada son los valores observados en las diferentes
+variables explicativas (edad, actividad física, alimentación, etc).
+
+\textbf{Odds ratio.}\\
+Definiciön:
+
+Sean X y C dos vectores aleatorios.\\
+\strut \\
+Le llamamos la proporción posterior de $C_1$ respecto a $C_2$ a la proporción
+de densidad posterior $\mathbb{P}(C \mid X)$ evaluada en los puntos $C_1$ y $C_2$.
+
+Esto es, $\dfrac{\mathbb{P}(C_1 \mid X)}{\mathbb{P}(C_2 \mid X)}$
+
+Notemos que al aplicarse el teorema de Bayes a esta expresión se puede
+reducir a lo siguiente:
+
+\(\frac{\mathbb{P}(C_1\mid X)}{\mathbb{P}(C_2\mid X)}
+= \frac{\mathbb{P}(C_1)\,\mathbb{P}(X\mid C_1)/\mathbb{P}(X)}{\mathbb{P}(C_2)\,\mathbb{P}(X\mid C_2)/\mathbb{P}(X)}
+= \frac{\mathbb{P}(C_1)\,\mathbb{P}(X\mid C_1)}{\mathbb{P}(C_2)\,\mathbb{P}(X\mid C_2)}\)
+
+Usualmente esta expresión es utilizada con parámetros $C_1$ y $C_2$ discretos,
+tales que $C_2$ es el complemento de $C_1$.
+
+\section{Capítulo 3. Modelado matemático de
+Project42.}\label{capuxedtulo-3.-modelado-matemuxe1tico-de-project42.}
+
+En este capítulo buscamos formalizar matemáticamente el sistema
+implementado en la plataforma de Project42. Más específicamente queremos
+formalizar los conjuntos de datos, el modelo estadístico utilizado y el
+criterio usado para evaluar la capacidad explicativa de las variables
+usadas.
+
+En Project42 se cuenta con cuatro poblaciones, cada una de las cuales
+cuenta con diferentes características o variables, todas orientadas a
+encontrar patrones en los padecimientos de salud, sin embargo todas se
+trataron para compartir una estructura de datos similar, con el objetivo
+de que la creación de modelos sea independiente del origen de los datos.
+Con este enfoque, el proyecto puede interpretarse como una plataforma
+para el análisis explicativo de variables mediante clasificación
+bayesiana.
+
+Sin embargo, en este capítulo nos enfocaremos en la formalización de los
+conjuntos de datos utilizados por Project42, asi como de la clase
+objetivo y el conjunto de variables independientes (o explicativas) y a
+partir de estos elementos calcular y analizar las métricas epsilon y
+score.
+
+\subsection{3.1 Naive Bayes.}\label{naive-bayes.}
+
+Naive Bayes es un algoritmo de clasificación que como su nombre lo
+indica está basado en el teorema de Bayes, en otras palabras, Naive
+Bayes es una función $NB: \Omega \to \mathbb{R}$, tal que $NB(X = x)$ nos
+da la clase más probable a la que pertenece el vector aleatorio $X = x$.
+
+El término Naive (ingenuo) viene de que el algoritmo asume independencia
+entre las diferentes entradas del vector X = x.
+
+Consideremos una muestra aleatoria $M$, $n$ variables aleatorias $X_1, \ldots,
+X_n$ y una variable objetivo $C$ con $k$ diferentes valores, $C_1, \ldots, C_k$.
+Entonces la idea de Naive Bayes es preguntarse, dada una observación $x_i$
+$= (x_{1i}, x_{2i}, \ldots, x_{ni})$, cuál es la probabilidad de que $x_i$ pertenezca
+a la clase $C_j$ para algún $j \le k$. De esta manera Naive Bayes
+``predice'' que la observación $x_i$ pertenece a la clase que maximiza la
+siguiente probabilidad:
+
+$\mathbb{P}(C = C_j \mid x_i) = \dfrac{\mathbb{P}(C = C_j)\,\mathbb{P}(x_i \mid C = C_j)}{\mathbb{P}(x_i)}$
+(Teo. Bayes)
+
+Sin embargo, calcular las verosimilitudes ($\mathbb{P}(x_i \mid C = C_j)$)
+puede ser complejo y en la práctica algo casi imposible. Se puede dar el
+caso en que un valor en específico $x_i = (X_1 = x_{1i}, X_2 = x_{2i}, \ldots, X_n
+= x_{ni})$ sea un valor que no exista en el conjunto de datos o bien el
+número de observaciones en éste no sea suficiente para estimar con un
+buen nivel de confianza la probabilidad de pertenencia a la clase.
+
+Aquí es donde el supuesto de independencia entre las diferentes entradas
+de $X = (X_1, X_2, \ldots, X_n)$ entra en juego. Al considerar considerar
+independencia, podemos considerar lo siguiente:
+
+Sean $A$ y $B$ dos eventos condicionalmente independientes dado un evento $C$,
+si:
+
+$\mathbb{P}(A \cap B \mid C) = \mathbb{P}(A \mid C)\,\mathbb{P}(B \mid C)$
+
+Entonces, la verosimilitud $\mathbb{P}(x_i \mid C = C_j)$ se puede calcular de
+la siguiente manera:
+
+$\mathbb{P}(x_i \mid C = C_j) = \mathbb{P}(X_1 = x_{1i} \cap X_2 = x_{2i} \cap \ldots{} \cap X_n = x_{ni}
+\mid C = C_j)$
+
+\begin{quote}
+$= \mathbb{P}(X_1 = x_{1i} \mid C = C_j) * \ldots{} * \mathbb{P}(X_n = x_{ni} \mid C = C_j)$,
+con $i = 1, 2, \ldots, n$
+\end{quote}
+
+Por lo tanto, la probabilidad a posterior queda de la siguiente manera:
+
+$\mathbb{P}(C = C_j \mid x_i) = \dfrac{\mathbb{P}(C = C_j) * \mathbb{P}(X_1 = x_{1i} \mid C = C_j) *
+\ldots{} * \mathbb{P}(X_n = x_{ni} \mid C = C_j)}{\mathbb{P}(x_i)}$
+
+Con esto, Naive Bayes asigna una observación $x_i$ a la clase $C = C_j$ que
+maximiza $\mathbb{P}(C = C_j \mid x_i)$
+
+\subsection{3.2 Construcción de un Score.}\label{naive-bayes-a-partir-de-log-odds.}
+Uno de los problemas con Naive Bayes es que no es claro que tanto está aportando cada variable "predictora" para la predicción de
+la clase objetivo. Una forma ingeniosa de tratar este problema es la propuesta usada por Christopher Stephens en el trabajo When is Naive Bayes
+aproximation not so naive? , donde se propone usar log odds para medir la contribución del valor de cada variable predictora a la predicción de la clase objetivo.
+
+Sea $C$ una clase de interés y $\bar{C}$ su complemento y $X = (X_1, X_2, \ldots, X_n)$ un vector de variables predictoras.
+
+Ahora, observemos que como $C$ y $\bar{C}$ son complementos, entonces $\mathbb{P}(C \mid X = x) + \mathbb{P}(\bar{C} \mid X = x) = 1$.
+
+Entonces, tenemos que $\mathbb{P}(C \mid X = x) > \mathbb{P}(\bar{C} \mid X = x)$ si y solo si $\dfrac{\mathbb{P}(C \mid X = x)}{\mathbb{P}(\bar{C} \mid X = x)} > 1$,
+cuando $\mathbb{P}(\bar{C} \mid X = x) > 0$.
+
+Si ahora consideramos el logaritmo natural de esta proporción, tenemos que:
+$\log\left(\dfrac{\mathbb{P}(C \mid X = x)}{\mathbb{P}(\bar{C} \mid X = x)}\right) > 0$ si y solo si $\dfrac{\mathbb{P}(C \mid X = x)}{\mathbb{P}(\bar{C} \mid X = x)} > 1$.
+
+Por transitividad, obtenemos que:
+$\mathbb{P}(C \mid X = x) > \mathbb{P}(\bar{C} \mid X = x)$ si y solo si $\log\left(\dfrac{\mathbb{P}(C \mid X = x)}{\mathbb{P}(\bar{C} \mid X = x)}\right) > 0$.
+
+
+Una vez con esta intuición, definimos $S(X)$, el score de $X$ para la clase $C$ como el logaritmo de la proporción posterior de $C$ respecto a $\bar{C}$, es decir:
+
+$S(X)$ $= \log\left(\dfrac{\mathbb{P}(C \mid X = x)}{\mathbb{P}(\bar{C} \mid X = x)}\right)$
+
+Notemos que por el teorema de Bayes, se tiene que:
+\begin{align*}
+S(X) & = \log\left(\dfrac{\mathbb{P}(C)\,\mathbb{P}(X = x \mid C)/\mathbb{P}(X = x)}{\mathbb{P}(\bar{C})\,\mathbb{P}(X = x \mid \bar{C})/\mathbb{P}(X = x)}\right)\\
+& = \log\left(\dfrac{\mathbb{P}(C)\,\mathbb{P}(X = x \mid C)}{\mathbb{P}(\bar{C})\,\mathbb{P}(X = x \mid \bar{C})}\right)\\
+& = \log\left(\dfrac{\mathbb{P}(C)}{\mathbb{P}(\bar{C})}\right) + \log\left(\dfrac{\mathbb{P}(X = x \mid C)}{\mathbb{P}(X = x \mid \bar{C})}\right)
+\end{align*}
+
+Ahora, si aplicamos la independencia condicional de Naive Bayes podemos escribir las verosimilitudes $\mathbb{P}(X = x \mid C)$ y $\mathbb{P}(X = x \mid \bar{C})$ como:
+$\mathbb{P}(X = x \mid C) = \prod_{j = 1}^n \mathbb{P}(X_j = x_{j} \mid C)$
+$\mathbb{P}(X_i = x_i \mid \bar{C}) = \prod_{j = 1}^n \mathbb{P}(X_j = x_{j} \mid \bar{C})$
+
+Denotaremos por $S_{NB}(X_i)$ el score de la variable $X_i$ cuando se asuma la independencia condicional de las variables predictoras sobre la clase.
+Entonces, $S_{NB}(X) = \log\left(\dfrac{\mathbb{P}(C)}{\mathbb{P}(\bar{C})}\right) + \sum_{j = 1}^n \log\left(\dfrac{\mathbb{P}(X_j = x_{j} \mid C)}{\mathbb{P}(X_j = x_{j} \mid \bar{C})}\right)$
+
+Si denotamos $s(X_j = x_j) = \log\left(\dfrac{\mathbb{P}(X_j = x_{j} \mid C)}{\mathbb{P}(X_j = x_{j} \mid \bar{C})}\right)$, entonces $S_{NB}(X) = \log\left(\dfrac{\mathbb{P}(C)}{\mathbb{P}(\bar{C})}\right) + \sum_{j = 1}^n s(X_j)$
+
+De esta forma, se ha construido un clasificador basado en Naive Bayes $S_{NB}(X)$ que predice que una observación $x$ pertenece a la clase $C$ si $S_{NB}(X) > 0$ y a $\bar{C}$ si $S_{NB}(X) < 0$.
+
+La ventaja de este clasificador es la transparencia sobre sus predictores, pues $s(X_j = x_j)$ representa directamente el aporte del valor $x_j$ en la variable $X_j$ para la predicción de la clase $C$.
+
+\subsection{3.2 Construcción de
+epsilon.}\label{construcciuxf3n-de-epsilon.}
+
+Como se ha ido comentando a lo largo de los capítulos anteriores, la
+idea detrás de epsilon es obtener una métrica que determine cuando el
+valor de una variable es estadísticamente significativa para la
+predictibilidad de una clase de interés.
+
+La manera en que obtendremos epsilon será a través de un test de
+significancia.
+
+Sea $X_i$ una variable aleatoria y $C$ la clase de interés.
+
+Definimos la hipótesis nula $H_0: X_i \perp C$.
+
+Y definimos la variable aleatoria $K_i$ como el número de observaciones con
+la clase $C$ de entre las que tienen $X_i = x_i$.
+
+Con esto, podemos notar que $K_i \sim \text{Binomial}(N_{X_i}, p)$, con
+$p = \mathbb{P}(C \mid X_i = x_i)$ y $N_{X_i}$ el número de observaciones con $X_i=x_i$.
+
+Entonces bajo $H_0$, tenemos que $\mathbb{P}(C \mid X_i = x_i) = \mathbb{P}(C)$.
+
+Por lo tanto, $E(K_i) = N_{X_i}\,\mathbb{P}(C)$ y $\operatorname{Var}(K_i) = N_{X_i}\,\mathbb{P}(C)\,(1 -
+\mathbb{P}(C))$.
+
+Y la desviación estándar $\sigma = \sqrt{\operatorname{Var}(K_i)}$.
+
+Con esto, definimos epsilon de la siguiente forma:
+
+$\varepsilon = \dfrac{K_{i,obs} - E(K_i)}{\sigma}$
+
+Por notación, consideramos $K_{i,obs} = N_{CX_i}$.
+
+Notemos que, \(N_{CX_i} = \frac{N_{X_i} * N_{CX_i}}{N_{X_i}}\), con
+$N_{X_i} \neq 0$.
+
+Entonces,
+\(N_{CX_i} = \frac{N_{X_i} * \frac{N_{CX_i}}{N}}{\frac{N_{X_i}}{N}} = N_{X_i} * \frac{\mathbb{P}(C \cap X_i)}{\mathbb{P}(X_i)}\)
+
+\(= N_{X_i} * \mathbb{P}(C\mid X_i)\)
+
+Sustituyendo en $\varepsilon$:
+
+\(\varepsilon = \frac{N_{X_i} * \mathbb{P}(C\mid X_i) - N_{X_i} * \mathbb{P}(C)}{\sqrt{N_{X_i} * \mathbb{P}(C) * (1 - \mathbb{P}(C))}}
+= \frac{N_{X_i} * (\mathbb{P}(C\mid X_i) - \mathbb{P}(C))}{\sqrt{N_{X_i} * \mathbb{P}(C) * (1 - \mathbb{P}(C))}}\)
+
+Además, notemos que como $K_i \sim \text{Binomial}(N_{X_i}, p)$, $K_i$ se
+puede reescribir como suma de Bernoullis, es decir:
+
+$K_i = \sum_{t = 1}^{N_{X_i}} Z_t$, con $Z_t \sim \text{Bernoulli}(p)$.
+
+Así, cuando $N_{X_i}$ tiende a infinito (en la práctica, cuando es mayor a
+30) podemos aplicar el \textbf{teorema central del límite}, el cual dice
+que:
+
+\(\frac{K_i - E(K_i)}{\sqrt{\operatorname{Var}(K_i)}}\sim N(0,1)\) cuando
+$N_{X_i}$ tiende a infinito (o cuando es mayor a 30)
+
+Por lo tanto, bajo $H_0$ tenemos que $\varepsilon \sim \text{Normal}(0, 1)$,
+cuando $N_{X_i} > 30$.
+
+Con esto, podemos concluir lo siguiente:
+
+Si $|\varepsilon| < 1.96$, no rechazamos la hipótesis
+nula, es decir, no hay suficiente evidencia de dependencia entre $X_i = x_i$
+y $C$; en otras palabras, $X_i = x_i$ no predice $C$.
+
+Si $|\varepsilon| > 1.96$, en este caso podemos
+rechazar la hipótesis nula con un nivel de confianza del 95\%, es decir,
+hay evidencia de que $X_i$ y $C$ son dependientes y por lo tanto, $X_i = x_i$
+predice $C$.
+
+Más aún, cuando $\varepsilon > 1.96$, decimos que $X_i = x_i$ es un factor
+de riesgo para la clase $C$, pues que un individuo tenga $X_i = x_i$ aumenta
+la probabilidad de $C$.
+
+Por otro lado, cuando $\varepsilon < -1.96$ decimos que $X_i = x_i$ es un
+factor protector, pues si un individuo tiene $X_i = x_i$, la probabilidad de
+$C$ disminuye.
+
+\subsection{3.3 Formalización de los conjuntos de
+datos.}\label{formalizaciuxf3n-de-los-conjuntos-de-datos.}
+
+La primera población con la que se empezaron a obtener resultados dentro
+de Project42 fue la de Estudiantes, Académicos y Trabajadores de la UNAM
+2014. La definimos de la siguiente manera:
+
+Sea P una población de interés, en este caso P = Estudiantes, Académicos
+y trabajadores de la UNAM, sea D nuestra muestra aleatoria de P de
+tamaño N, en este caso N = 1076.
+
+Para cada individuo $d \in D$, se observan m variables:
+
+$X = (X_1, X_2, \ldots, X_m)$, que en nuestro caso $m = 600$.
+
+Donde cada $X_i$ es una función que asigna valores, y pueden ser tanto
+categóricos como numéricos, en el caso de ser numéricos requiere de una
+discretización previa. Algunos ejemplos de $X_i$ son:
+
+$X_1 = \text{Edad} \in \mathbb{N}$
+
+$X_2 = \text{Sexo} \in \{M, F\}$
+
+$X_3 = \text{IMC} \in \mathbb{R}^+$
+
+$X_3 = \text{Diabetes} \in \{\text{Sí}, \text{No}\}$
+
+La definición de nuestra clase objetivo siempre se considerará binaria,
+es decir, $C: D \to \{0, 1\}$, y podemos considerar a $C$ como
+la función indicadora sobre el conjunto de individuos por el cual
+tenemos interés, por ejemplo:
+
+$C = 1\{\text{Diabetes = ``Sí''}\}$
+
+$C = 1\{\text{Presión\_sistolica} \ge 140\}$
+
+$C = 1\{\text{Diabetes = ``Sí''}\} \cup \{\text{Fumador = ``Sí''}\}$
+
+De esta forma podemos definir a los conjuntos C+ y C- que conformarán a
+la clase y no clase respectivamente.
+
+$C^+ = \{d \in D \mid C(d) = 1\}$
+
+$C^- = \{d \in D \mid C(d) = 0\}$
+
+Con esto, denotamos:
+
+N\_C = \textbar C+\textbar{} y N\_C- = \textbar C-\textbar{}
+
+Veamos un ejemplo concreto:
+
+Sea C = 1\{Diabetes = Sí\}
+
+X = \{Edad, IMC, Fumador, Actividad\_correr\}
+
+Al ser variables numéricas tanto edad como IMC, hacemos una
+discretización de sus valores, así $\text{Edad} \in \{\text{``<26''}, \text{``27 -
+30''}, \text{``31 - 34''}, \text{``35 - 38''}, \ldots\}$ e $\text{IMC} \in \{\text{``< 18.5''},
+\text{``18.5 - 24.9''}, \text{``25 - 29.9''}, \text{``> 30''}\}$.
+
+Con esto, obtenemos:
+
+$N_C = 45$
+
+$\mathbb{P}(C) = 0.04$
+
+$N_{C^-} = 1031$
+
+Y obtenemos los siguientes resultados de epsilon y score para las
+variables predictoras:
+
+Para la variable Edad:
+
+Valor Epsilon Score
+
+\textless{} 26 -2.09 -6.08
+
+27-30 -2.17 -6.16
+
+\ldots{}
+
+Para IMC:
+
+\ldots{}
+
+Para Fumador:
+
+\ldots{}
+
+Para Actividad\_correr:
+
+\ldots{}
+
+Con estos resultados concluimos que los valores significativamente
+predictivos (con a = 0.05) para la clase, es decir que epsilon es mayor
+a 2, son los siguientes:
+
+Edad \textgreater{} 59.5, IMC = ``\textgreater{} 30'' ``Obeso'', Edad =
+``55 - 59''
+
+De la misma forma, los valores significativamente para la no clase son:
+
+Edad = ``30-34'', Edad = ``26 - 30'' y Actividad\_correr = ``Sí''
+
+\end{document}
