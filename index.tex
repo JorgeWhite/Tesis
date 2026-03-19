@@ -800,8 +800,8 @@ mas de 600 variables cada una y más de 1000 observaciones cada una. El cálculo
 de un solo modelo requiere de obtener muchas probabilidades condicionales
 y marginales lo cual no hace nada más que empeorar si se busca calcular multiples modelos.
 
-Este capítulo tiene como objetivo analizar el problema desde un punto de vista de complejidad
-algoritmica y proponer un sistema que pueda ser eficiente tanto en tiempo como en espacio para 
+Este capítulo tiene como objetivo proponer un sistema que abarque desde la recuperación de datos,
+hasta la construcción de epsilon y score, así como analizar su complejidad algorítmica con el objetivo de 
 que el usuario final pueda obtener un modelo en tiempo razonable.
 
 Para esto, necesitamos saber los fundamentos de la complejidad algorítmica, analizar 
@@ -1008,6 +1008,91 @@ las variables de iteración, por lo tanto, $S(n) = O(1)$, $S(n) = \Omega(1)$ y $
 Cabe aclarar que existen implementaciones de Bubble Sort más eficientes que pueden hacer que 
 su complejidad temporal sea de $T(n) = \Omega(n)$ en su mejor caso, sin embargo su Big O sigue siendo 
 cuadrático.
+
+
+\subsection{4.3 Elasticsearch vs. GraphQL vs. Clickhouse.}\label{elasticsearch-vs.-graphql-vs.-clickhouse.}
+
+La recuperación de datos es el primer proceso para la construcción de nuestro sistema, y 
+es uno de los pasos más importantes, pues la eficiencia de éste puede empeorar significativamente 
+el tiempo total de construcción de modelos, dando una mala experiencia al usuario final.
+
+En este apartado analizamos los diferentes enfoques que usan las herramientas Elasticsearch, GraphQL y Clickhouse 
+para la recuperación de datos, para así poder elegir la opción que mejores resultados nos de en términos de 
+complejidad temporal para nuestro caso en particular.
+
+Recordemos que el objetivo del sistema es obtener un modelo predictivo y explicativo para una clase de interés, 
+para esto, haremos el calculo de epsilon y score mediante conteos de observaciones, mas especificamente y usando 
+la notación de la sección 3.3, necesitamos obtener los siguientes conteos:
+$N$, $N_{C^+}$, $N_{C^-}$, $N_{X_i}$, $N_{C^+ X_i}$ y $N_{C^- X_i}$ para cada variable $X_i$.
+
+Por lo cual, la herramienta que elijamos debe ser capaz de devolvernos los datos necesarios para 
+posteriormente calcular estos conteos. \\
+
+\textbf{Elasticsearch.}
+
+Elasticsearch es una herramienta principalmente pensada para almacenar, buscar y filtrar información de forma rápida. 
+Una forma sencilla de imaginarlo es como un índice en un libro, en lugar de leer todo el libro para encontrar 
+la información que buscas, primero consultas en el índice y así puedes llegar más rápido al contenido que buscas.
+
+Para conseguir esto, Elasticsearch guarda los datos en una estructura llamada "documento", y crea una estructura 
+interna llamada "índices" que le permite localizar datos sin tener que revisar todos los datos desde cero. Esto lo vuelve 
+especialmente útil para búsquedas donde hay que filtrar mucho los datos y devolver únicamente un pequeño subconjunto 
+de los datos totales.
+
+De manera simplificada, Elasticsearch funciona de la siguiente manera:
+1. Se cargan los datos en forma de documentos, cada documento representa una observación con sus respectivas variables.
+2. Elasticsearch construye índices para acelerar búsquedas y filtros.
+3. El usuario realiza una consulta con ciertos filtros y condiciones.
+4. El sistema responde con una estructura de datos conteniendo los registros que cumplen con esas condiciones y 
+con los campos solicitados.
+
+La idea clave es que Elasticsearch es muy eficiente para responder preguntas del tipo: "Dame solo los individuos 
+que cumplen estas condiciones, y solo con estas variables".\\
+
+\textbf{GraphQL.}
+
+A diferencia de Elasticsearch, GraphQL no es una base de datos ni un sistema de almacenamiento, sino una forma de 
+pedir datos a un servidor. Una forma sencilla de verlo es como un mesero en un restaurante, en lugar de que 
+se le proporcione un menú fijo al cliente, el cliente pide exactamente lo que quiere, y el mesero se encarga de traerlo.
+
+En sistemas más tradicionales, cuando se hacen consultas a servidores, muchas veces se regresa información que no es 
+necesaria, o bien se requieren de multiples consultas para obtener toda la informacion requerida. QraphQL busca resolver 
+esto permitiendo que el cliente especifique exactamente qué datos necesita.
+
+De forma simplificada, GraphQL funciona así:
+1. Se define un esquema (squema) que describe los tipos de datos disponibles y cómo se relacionan entre sí.
+2. El cliente envía una consulta al servidor especificando exactamente los campos que necesita.
+3. El servidor procesa la consulta accediendo a la base de datos.
+4. El servidor devuelve los datos solicitados y en el formato especificado por el cliente.
+
+Aquí, la idea fundamental para el uso de GraphQL es que el usuario puede pedir exactamente la información que necesita, 
+evitando recibir información innecesaria.\\
+
+\textbf{Clickhouse.}
+
+Clickhouse es una base de datos diseñada para manejar grandes volúmenes de datos de forma muy rápida. El enfoque 
+para conseguir esto es a través de una arquitectura orientada a columnas, no por filas completas como en las bases 
+de datos tradicionales. 
+
+De manera sencilla, Clickhouse funciona de la siguiente manera:
+1. Inicialmente se almacenan los datos en en tablas, después internamente se organizan por columnas.
+2. Cuando el usuario hace una consulta, Clickhouse accede solo a las columnas necesarias para responder la consulta.
+3. Clickhouse utiliza técnicas de compresión y paralelización para acelerar el procesamiento de consultas.
+4. El sistema devuelve los resultados de la consulta al usuario.
+
+Un detalle importante que vuelve a Clickhouse muy rápido al hacer consultas, es su forma de paralelizar el procesamiento 
+de consultas, es decir, puede dividir una consulta en partes más pequeñas y hacer uso de múltiples núcleos de 
+procesamiento para responder la consulta completa más rápido.\\
+
+Habiendo considerado los tres enfoques, una observación a tener en cuenta es que con una implementación adecuada, 
+los tres enfoques comparten la misma complejidad temporal $O(nm)$, 
+sin embargo, en el siguiente capítulo se muestra que el rendimiento temporal de los tres enfoques varia significativamente, 
+lo cual se explica principalmente por factores constantes y de arquitectura, no por el orden asíntotico.
+
+Aún así, a simple vista y considerando nuestro caso particular, el enfoque que parece más adecuado es el de Clickhouse, 
+pues su capacidad de paralelización y sobre todo su arquitectura orientada a columnas lo hacen muy atractivo, ya que 
+la gran mayoría de las consultas que se harán para obtener los modelos no requerirán de todas las variables. 
+
 
 
 \addcontentsline{toc}{subsection}{4.2 Análisis teórico de cada enfoque para la recuperación de datos.}
