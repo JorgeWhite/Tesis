@@ -7,6 +7,7 @@
 ]{article}
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
+\usepackage{listings}
 \usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
 \usepackage{setspace}
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
@@ -27,7 +28,7 @@
 % Use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 \IfFileExists{microtype.sty}{% use microtype if available
-  \usepackage[]{microtype}
+  \usepackage[nopatch=footnote]{microtype}
   \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
 \makeatletter
@@ -52,6 +53,25 @@
 \hypersetup{
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
+
+\lstdefinestyle{pseudocodigo}{
+  backgroundcolor=\color{gray!15},
+  basicstyle=\ttfamily\small,
+  frame=single,
+  framerule=0pt,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+  aboveskip=1em,
+  belowskip=1em,
+  showstringspaces=false,
+  inputencoding=utf8,
+  literate=
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+    {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+    {ñ}{{\~n}}1 {Ñ}{{\~N}}1
+    {ü}{{\"u}}1 {Ü}{{\"U}}1
+    {¿}{{?`}}1 {¡}{{!`}}1
+}
 
 \author{}
 \date{}
@@ -1093,11 +1113,307 @@ Aún así, a simple vista y considerando nuestro caso particular, el enfoque que
 pues su capacidad de paralelización y sobre todo su arquitectura orientada a columnas lo hacen muy atractivo, ya que 
 la gran mayoría de las consultas que se harán para obtener los modelos no requerirán de todas las variables. 
 
+\subsection{4.4 Análisis de complejidad temporal y espacial.}\label{4.4-análisis-de-complejidad-temporal-y-espacial.}
+
+Ahora vamos a proponer un sistema para la construcción de epsilon y score, así como analizar su complejidad temporal y 
+espacial.
+Ya que al momento de devolver los datos de Elasticsearch, GraphQL y Clickhouse, cada uno los devuelve en un 
+formato diferente, la primera parte del sistema será un "puente" que se encargue de transformar los datos 
+recibidos de cada herramienta a un formato común o genérico. 
+
+Necesitamos una estructura de datos genérica que nos pueda facilitar el calculo de epsilon y score mediante 
+conteos de forma eficiente, para esto, una buena opción es usar diccionarios de Python, donde cada clave del 
+diccionario correspondera a una observación, y el valor de cada clave será otra diccionario donde cada clave 
+corresponda a una variable y el valor correspondiente de esa observación para esa variable. De manera más formal 
+podemos definir esta estructura de datos de la siguiente forma:
+Sea $D$ un conjunto de observaciones, y $X = \{X_1, X_2, \ldots, X_m\}$ el conjunto de variables de interés, entonces definimos la estructura de datos genérica $S$ como un diccionario de Python tal que:
+$$S = \{d: \{X_i: x_{d,i} \mid i = 1, 2, \ldots, m\} \mid d \in D\}$$
+
+Podemos ver a S de manera más intuitiva como una tabla, donde cada fila corresponde a una observación y cada 
+columna corresponde a una variable, cabe aclarar que la clase de interés ya está contemplada en esta estructura 
+de datos. 
+
+\begin{lstlisting}[style=pseudocodigo]
+# Ejemplo de S con 3 observaciones
+# y 3 variables (peso, edad e hipertension):
+
+S = {
+  1: {
+    'peso': 75.5,
+    'edad': 45,
+    'hipertension': 1
+  },
+  2: {
+    'peso': 62.3,
+    'edad': 32,
+    'hipertension': 0
+  },
+  3: {
+    'peso': 88.2,
+    'edad': 58,
+    'hipertension': 1
+  }
+}
+\end{lstlisting}
+
+Antes de proceder a los conteos recordemos que el las métricas epsilon y score suponen el uso de variables 
+categóricas, por lo cual si alguna variable es numérica, se requiere de una discretización previa. 
+Para esto usaremos qcut, una herramienta de discretización incluida en la librería de Python, pandas, 
+la cual divide a los datos en de forma que cada intervalo tenga aproximadamente la misma cantidad de observaciones, 
+esto es de gran importancia, pues recordemos que para la construcción de epsilon se requiere que $N_{X_i} > 30$, 
+por lo cual, si se hace una discretización de forma que cada intervalo tenga aproximadamente la misma cantidad 
+de observaciones, es más probable que se cumpla esta condición.
+
+Bien, para esto qcut requiere de un arreglo de los valores numéricos de la variable a discretizar, 
+así como el número de intervalos (bins) que se quieran crear, el cual de manera arbitraria fijamos en 10. 
+
+Así, proponemos el siguiente algoritmo para la discretización de variables numéricas, este método tiene como 
+objetivo devolver una diccionario donde cada clave corresponda a una variable numérica y el valor de cada clave 
+contenga un arreglo con los diferentes intervalos creados por qcut para esa variable.
+
+\begin{lstlisting}[style=pseudocodigo]
+
+def discretize_variable(data, variables, bins=10):
+  # Creamos un diccionario para almacenar las variables
+  # numericas y sus respectivos 
+  # arreglos de valores a discretizar.
+  numeric_variables = {}
+
+  # Obtenemos los metadatos de cada variable para revisar 
+  # cuales son numericas.
+  variable_metadata = get_metadata(variables)
+
+  # Iteramos sobre cada observacion.
+  for obs in data:
+    # Ahora iteramos sobre cada variable de la observacion.
+      for var in variables:
+      # Revisamos si la variable es numerica.
+          if (variable_metadata[var]['type'] == 'numeric'):
+        # Si la variable aun no esta en el diccionario,
+        # agregamos una nueva clave.
+              if not var in numeric_variables:
+                numeric_variables[var] = []
+                
+                # Agregamos el valor de la variable a su 
+                # respectivo arreglo en el diccionario.
+                numeric_variables[var].append(data[obs][var])
+
+    # Creamos el diccionario para almacenar las variables 
+    # numericas y sus respectivos intervalos.
+    discretized_variables = {}
+
+    # Ahora iteramos sobre cada variable numerica 
+    # para discretizarla.
+    for var in numeric_variables:
+        # Usamos qcut para discretizar la variable.
+        discretized_variables[var] = qcut(numeric_variables[var], bins, duplicates='drop')
+
+    return discretized_variables
+\end{lstlisting}
+
+Para la primera parte de este algoritmo, el tiempo de ejecución es $O(nm)$, pues se itera sobre 
+cada observación y cada variable, para la segunda parte del algoritmo, notemos que qcut tiene una complejidad 
+de $O(n \log n)$ con n la cantidad de observaciones, pues qcut ordena los valores numéricos de la 
+variable a discretizar y hace los cortes correspondientes. Al hacer esto para cada variable numérica, la complejidad 
+de esta parte del algoritmo es de $O(m n \log n)$, por lo tanto, la complejidad total del algoritmo es 
+de $O(nm + m n \log n) = O(m n \log n)$.
+
+Bien, ahora que tenemos los diferentes bins para cada variable numérica, el siguiente paso es asignar cada 
+observación a su respectivo bien en cada variable numérica, para esto, usaremos el siguiente algoritmo:
+
+\begin{lstlisting}[style=pseudocodigo]  
+  def assign_bins(data, discretized_variables):
+    # Iteramos sobre cada variable numerica.
+    for var in discretized_variables:
+      # Iteramos sobre cada observacion.
+      for obs in data:
+        # Ahora iteramos sobre cada intervalo 
+        # de la variable numérica.
+        for interval in discretized_variables[var]:
+          # Revisamos si el valor de la variable 
+          # para la observacion se encuentra
+          # dentro del intervalo.
+          obs_value = data[obs][var]
+          
+          if obs_value in interval:
+            # Si el valor de la variable para la 
+            # observacion se encuentra 
+            # dentro del intervalo, asignamos 
+            # el valor del intervalo a la 
+            # variable para esa observacion.
+            data[obs][var] = interval
+
+\end{lstlisting}
+
+En este algoritmo primero se itera sobre cada variable numérica, después se itera sobre cada observación, y 
+finalmente se itera sobre cada intervalo de la variable numérica, al ser la cantidad de intervalos una 
+constante fija por nosotros, la complejidad de este algoritmo es de $O(mn)$, con m la cantidad de variables 
+numéricas y n la cantidad de observaciones.
+
+Ahora, para ayudarnos a calcular los conteos, vamos a crear un template donde almacenaremos las siguientes 
+variables: Cantidad de observaciones $N$, cantidad de observaciones que pertenecen a la clase de interés $NC$, 
+la cantidad de observaciones que no pertenecen a la clase $NNC$, la cantidad de observaciones que pertenecen 
+a la i-esima categoría de la variable X $(NX){i}$, la cantidad de observaciones que pertenecen a la clase y 
+que pertenecen a la i-esima categoría de la variable X $(NCX)_{i}$, epsilon y score para cada categoría de las 
+variables predictoras.
+
+\begin{lstlisting}[style=pseudocodigo]
+  def create_template(variables_pred, discretized_variables):
+    template = {
+      'N': 0,
+      'NC': 0,
+      'NNC': 0
+    }
+    # Creamos un diccionario para almacenar los conteos de cada categoría
+    # de cada variable predictora.
+    values = {}
+
+    variables_metadata = get_metadata(variables_pred, class_variable)
+
+    # Iteramos sobre cada variable.
+    for var in variables_pred:
+      # Creamos su entrada dentro de values.
+      values[var] = {}
+      # Revisamos si la variable es categórica o numérica.
+      if variables_metadata[var]['type'] == 'categorical':
+        # Si la variable es categórica, accedemos a sus categorías desde los metadatos.
+        for cat in variables_metadata[var]['categories']:
+          # Para cada categoría, inicializamos los conteos en 0.
+          values[var][cat] = {
+            'NX': 0,
+            'NCX': 0,
+            'NNCX': 0,
+            'PC_X': 0,
+            'epsilon': 0,
+            'score': 0
+          }
+      else:
+        # Si la variable es numérica, accedemos a sus intervalos desde el diccionario
+        # de variables discretizadas.
+        for interval in discretized_variables[var]:
+          # Para cada intervalo, inicializamos los conteos en 0.
+          values[var][interval] = {
+            'NX': 0,
+            'NCX': 0,
+            'NNCX': 0,
+            'PC_X': 0,
+            'epsilon': 0,
+            'score': 0
+          }
+
+    template['variables'] = values
+    return template
+
+\end{lstlisting}
+
+Crear este template tiene una complejidad de $O(m)$ con m la cantidad de variables predictoras, pues a pesar 
+de que iteramos también sobre las categorías de cada variable, el número de categorías es constante.
+
+El siguiente paso es rellenar el template, primero con los conteos y posteriormente podremos calcular 
+epsilon y score. 
 
 
-\addcontentsline{toc}{subsection}{4.2 Análisis teórico de cada enfoque para la recuperación de datos.}
-\addcontentsline{toc}{subsection}{4.3 Elasticsearch vs GraphQL vs Clickhouse.}
-\addcontentsline{toc}{subsection}{4.4 Análisis de complejidad temporal y espacial.}
+\begin{lstlisting}[style=pseudocodigo]
+  def fill_template(data, template, class_variable, class_value):
+    N = 0
+    NC = 0
+
+    # Iteramos sobre cada observación.
+    for obs in data:
+      N += 1
+      # Revisamos si la observación pertenece a la clase
+      # de interés.
+      if data[obs][class_variable] == class_value:
+        NC += 1
+        # Si la observación pertenece a la clase de interés, 
+        # iteramos sobre cada variable predictora.
+        for var in template['variables']:
+          var_value = data[obs][var]
+          # Incrementamos el conteo de la categoría 
+          # correspondiente de la variable predictora.
+          template['variables'][var][var_value]['NX'] += 1
+          template['variables'][var][var_value]['NCX'] += 1
+      else:
+        # Si la observación no pertenece a la clase de interés, 
+        # iteramos sobre cada variable predictora.
+        for var in template['variables']:
+          var_value = data[obs][var]
+          # Incrementamos el conteo de la categoría
+          # correspondiente de la variable predictora.
+          template['variables'][var][var_value]['NX'] += 1
+          template['variables'][var][var_value]['NNCX'] += 1
+
+    template['N'] = N
+    template['NC'] = NC
+\end{lstlisting}
+
+En este algoritmo se itera sobre cada observación, y para cada observación se itera sobre cada variable 
+predictora, dentro de esta iteración se realizan operaciones de acceso y asignación de valores a un diccionario, 
+lo cual toma tiempo constante, por lo tanto la complejidad de este algoritmo es $O(nm)$.
+
+Una vez que tenemos los conteos, el siguiente paso es calcular la probabilidad de pertenecer a la clase 
+dado que se pertenece a una categoría de una variable predictora $PCX_{i}$ y con esto calcular epsilon y score.
+
+\begin{lstlisting}[style=pseudocodigo]
+  def fill_epsilon_score(template):
+    N = template['N']
+    NC = template['NC']
+    # Calculamos la probabilidad de pertenecer a la clase
+    # de interés.
+    PC = NC / N if N > 0 else 0
+
+    # Iteramos sobre cada variable predictora.
+    for var in template['variables']:
+      # Iteramos sobre cada categoría de la variable predictora.
+      for cat in template['variables'][var]:
+        # Calculamos la probabilidad de pertenecer a la 
+        # clase dado que se pertenece a la categoría de 
+        # la variable predictora.
+        NX = template['variables'][var][cat]['NX']
+        NCX = template['variables'][var][cat]['NCX']
+        NNCX = template['variables'][var][cat]['NNCX']
+        PCX = NCX / NX if NX > 0 else 0
+        template['variables'][var][cat]['PC_X'] = PCX
+        # Calculamos epsilon y score para la categoría 
+        # de la variable predictora.
+        epsilon = calculate_epsilon(PC, PCX, NX, NCX, NC)
+        score = calculate_score(N, NX, NCX, NC)
+        template['variables'][var][cat]['epsilon'] = epsilon
+        template['variables'][var][cat]['score'] = score
+
+    return template
+\end{lstlisting}
+
+En este algoritmo se itera sobre cada variable predictora y sobre cada categoría de cada variable, dentro de 
+esta iteración se realizan operaciones de tiempo constante, por lo tanto la complejidad de este algoritmo 
+es $O(m)$, con m la cantidad de variables predictoras.
+  
+Veamos que en efecto, el calculo de epsilon y score tiene una complejidad temporal de $O(1)$:
+
+\begin{lstlisting}[style=pseudocodigo]
+  def calculate_epsilon(PC, PCX, NX, NCX, NC):
+    # Calculamos epsilon para la categoría de la variable
+    # predictora.
+    if NX * PC * (1 - PC) > 0:
+      epsilon = (NX) * (PCX - PC) / (NX * PC * (1 - PC))**(1/2)
+    else:
+      epsilon = 0
+    return epsilon
+
+  def calculate_score(N, NX, NCX, NC):
+    # Calculamos score para la categoría de la variable 
+    # predictora.
+    numerator = NCX / NC
+    denominator = (NX - NCX) / (N - NC) if (N - NC) > 0 else 0
+    if NC > 0 and denominator > 0:
+      score = math.log(numerator / denominator)
+    else:
+      score = 0
+    return score
+\end{lstlisting}
+
+
+
 \addcontentsline{toc}{section}{Capítulo 5. Resultados experimentales}
 \addcontentsline{toc}{subsection}{5.1 Comparación de tiempos de construcción.}
 \addcontentsline{toc}{subsection}{5.2 Análisis de estabilidad estadística.}
