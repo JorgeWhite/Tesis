@@ -8,6 +8,11 @@
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
 \usepackage{listings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{statistics}
+\usepackage{float}
+\usepackage{placeins}
 \usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
 \usepackage{setspace}
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
@@ -1109,7 +1114,7 @@ los tres enfoques comparten la misma complejidad temporal $O(nm)$,
 sin embargo, en el siguiente capítulo se muestra que el rendimiento temporal de los tres enfoques varia significativamente, 
 lo cual se explica principalmente por factores constantes y de arquitectura, no por el orden asíntotico.
 
-Aún así, a simple vista y considerando nuestro caso particular, el enfoque que parece más adecuado es el de Clickhouse, 
+Aún pesar de esto, a simple vista y considerando nuestro caso particular, el enfoque que parece más adecuado es el de Clickhouse, 
 pues su capacidad de paralelización y sobre todo su arquitectura orientada a columnas lo hacen muy atractivo, ya que 
 la gran mayoría de las consultas que se harán para obtener los modelos no requerirán de todas las variables. 
 
@@ -1126,8 +1131,8 @@ conteos de forma eficiente, para esto, una buena opción es usar diccionarios de
 diccionario correspondera a una observación, y el valor de cada clave será otra diccionario donde cada clave 
 corresponda a una variable y el valor correspondiente de esa observación para esa variable. De manera más formal 
 podemos definir esta estructura de datos de la siguiente forma:
-Sea $D$ un conjunto de observaciones, y $X = \{X_1, X_2, \ldots, X_m\}$ el conjunto de variables de interés, entonces definimos la estructura de datos genérica $S$ como un diccionario de Python tal que:
-$$S = \{d: \{X_i: x_{d,i} \mid i = 1, 2, \ldots, m\} \mid d \in D\}$$
+Sea $D = \{d_1, d_2, \ldots, d_n\}$ un conjunto de individuos, y $V = \{V_1, V_2, \ldots, V_m\}$ el conjunto de variables de interés, entonces definimos la estructura de datos genérica $S$ como un diccionario de Python tal que:
+$$S = \{s_{j}:= \{x_{j,i} \mid i = 1, 2, \ldots, m\} \mid j = 1, 2, \ldots, n\}$$
 
 Podemos ver a S de manera más intuitiva como una tabla, donde cada fila corresponde a una observación y cada 
 columna corresponde a una variable, cabe aclarar que la clase de interés ya está contemplada en esta estructura 
@@ -1168,7 +1173,7 @@ Bien, para esto qcut requiere de un arreglo de los valores numéricos de la vari
 así como el número de intervalos (bins) que se quieran crear, el cual de manera arbitraria fijamos en 10. 
 
 Así, proponemos el siguiente algoritmo para la discretización de variables numéricas, este método tiene como 
-objetivo devolver una diccionario donde cada clave corresponda a una variable numérica y el valor de cada clave 
+objetivo devolver una diccionario donde cada key corresponda a una variable numérica y el valor de cada key 
 contenga un arreglo con los diferentes intervalos creados por qcut para esa variable.
 
 \begin{lstlisting}[style=pseudocodigo]
@@ -1412,15 +1417,461 @@ Veamos que en efecto, el calculo de epsilon y score tiene una complejidad tempor
     return score
 \end{lstlisting}
 
+Una vez calculados epsilon y score para cada categoría de cada variable predictora, el siguiente paso es 
+devolver esta información al frontend para que el usuario pueda visualizarla.
+Una vez habiendo analizado cada parte del sistema, podemos concluir que la complejidad temporal total es de $O(m n \log n)$, 
+siendo la discretización de variables numéricas la parte mas costosa del sistema, mientras que la complejidad espacial total es de 
+$O(nm)$, pues la estructura de datos S contiene un valor para cada observación y cada variable, así como el template contiene 
+un valor para cada categoría de cada variable predictora, lo cual es a lo más $O(m)$.
 
 
-\addcontentsline{toc}{section}{Capítulo 5. Resultados experimentales}
-\addcontentsline{toc}{subsection}{5.1 Comparación de tiempos de construcción.}
-\addcontentsline{toc}{subsection}{5.2 Análisis de estabilidad estadística.}
-\addcontentsline{toc}{subsection}{5.3 Validación empírica de lo teórico.}
-\addcontentsline{toc}{section}{Capítulo 6. Conclusiones}
-\addcontentsline{toc}{subsection}{6.1 Resultados principales.}
-\addcontentsline{toc}{subsection}{6.2 Limitaciones.}
-\addcontentsline{toc}{subsection}{6.3 Trabajo futuro.}
+\section{Capítulo 5. Resultados experimentales}\label{capuxedtulo-5.-resultados-experimentales.}
+
+La idea de este capítulo es mostrar los resultados experimentales y hacer una serie de comparativas entre los enfoques de recuperación 
+de datos, así como comparar la versión del proyecto previa a la optimización con la versión aquí propuesta, para así validar 
+que el análisis de complejidad temporal y espacial realizado se refleja en la práctica.
+
+Como mencionamos anteriormente, hay diversos factores que afectan el rendimiento temporal de un sistema, por lo cual intentaremos 
+comparar los diferentes enfoques de la manera mas justa posible, es decir, usando la misma computadora, con la misma conexión a 
+internet, incluso en horarios similares.
+
+\subsection{5.1 Comparación de tiempos de recuperación de datos.}\label{5.1-comparación-de-tiempos-de-recuperación-de-datos.}
+
+Comenzamos contrastando los tiempos de recuperación de datos de Elasticsearch, GraphQL y Clickhouse, para esto, vamos a 
+considerar dos poblaciones, primero con la población de Estudiantes, Académicos y Trabajadores de la UNAM, y después con la población 
+de Ensanut, para cada población seleccionaremos diferentes una clase de interés así como diferentes cantidades de variables 
+predictoras. 
+
+\begin{table}[htbp]
+\centering
+\caption{Comparación de tiempos de recuperación de datos por número de variables predictoras en la población 
+de Estudiantes, Académicos y Trabajadores de la UNAM.}
+\label{tab:comparacion-recuperacion-datos}
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+Sistema & 2 variables & 5 variables & 10 variables & 15 variables & 20 variables & 25 variables  \\
+\hline
+Elasticsearch &  &  &  &  &  &  \\
+\hline
+GraphQL &  &  &  &  &  &  \\
+\hline
+Clickhouse &  &  &  &  &  & \\
+\hline
+\end{tabular}
+\end{table}
+
+
+Para la población Ensanut obtuvimos los siguientes tiempos.
+\begin{table}[htbp]
+\centering
+\caption{Comparación de tiempos de recuperación de datos por número de variables predictoras en la población 
+de Ensanut.}
+\label{tab:comparacion-recuperacion-datos-ensanut}
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+Sistema & 2 variables & 5 variables & 10 variables & 15 variables & 20 variables & 25 variables  \\
+\hline
+Elasticsearch &  &5.39  &6.4  &7.25  &7.8  &9.3  \\
+\hline
+GraphQL &  &  &  &  &  &  \\
+\hline
+Clickhouse & 0.06  &0.11  &0.22  &0.31  &0.39  &0.64 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth,
+  height=0.45\textwidth,
+  xlabel={Número de variables predictoras},
+  ylabel={Tiempo de recuperación (s)},
+  xmin=2, xmax=25,
+  ymin=0, ymax=10,
+  xtick={2,5,10,15,20,25},
+  grid=major,
+  legend pos=north west,
+]
+\addplot[
+  color=blue,
+  mark=*,
+  thick
+] coordinates {
+  (5,5.39)
+  (10,6.4)
+  (15,7.25)
+  (20,7.8)
+  (25,9.3)
+};
+\addlegendentry{Elasticsearch}
+
+\addplot[
+  color=red,
+  mark=square*,
+  thick
+] coordinates {
+  (2,0.06)
+  (5,0.11)
+  (10,0.22)
+  (15,0.31)
+  (20,0.39)
+  (25,0.64)
+};
+\addlegendentry{Clickhouse}
+\end{axis}
+\end{tikzpicture}
+\caption{Gráfica de los tiempos de recuperación para la población Ensanut a partir de la última tabla.}
+\label{fig:tiempos-ensanut}
+\end{figure}
+
+Esto nos muestra que Clickhouse es significativamente más rápido que Elasticsearch, incluso con un número pequeño de variables, 
+esto se explica principalmente por su arquitectura orientada a columnas y su capacidad de paralelización, meintras que 
+Elasticsearch, aunque es eficiente para búsquedas, no está optimizado para este tipo de consultas.
+
+Por lo tanto, a partir de estos resultados, decidimos usar Clickhouse como nuestra herramienta para la recuperación de datos.
+
+\subsection{5.2 Análisis de estabilidad.}\label{5.2-análisis-de-estabilidad-estadística.}
+
+Parte importante de la validación empírica de un sistema es su estabilidad, en este caso queremos comprobar que la recuperación 
+de datos es estable, es decir, que al hacer la misma consulta varias veces, el sistema tome tiempos similares.
+Para esto, seleccionamos una consulta específica y la repetimos varias veces, obteniendo los siguientes resultados:
+
+Para la población de Estudiantes, Académicos y Trabajadores de la UNAM, recuperamos los datos de 25 variables incluida 
+la clase de interés, y obtuvimos los siguientes tiempos:
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth,
+  height=0.45\textwidth,
+  ybar,
+  xlabel={Tiempo de recuperación (s)},
+  ylabel={Frecuencia},
+  xmin=0.36, xmax=0.43,
+  grid=major,
+  enlarge x limits=0.02,
+]
+\addplot+[
+  hist={bins=12, data min=0.36, data max=0.43},
+  fill=teal!55,
+  draw=teal!80!black
+] table[row sep=\\,y index=0] {
+data\\
+0.4053\\
+0.4026\\
+0.3845\\
+0.4026\\
+0.4140\\
+0.3893\\
+0.4094\\
+0.3873\\
+0.3918\\
+0.4029\\
+0.4107\\
+0.4013\\
+0.3897\\
+0.4024\\
+0.3937\\
+0.4064\\
+0.3936\\
+0.4082\\
+0.3819\\
+0.3927\\
+0.3808\\
+0.4034\\
+0.3952\\
+0.4070\\
+0.3993\\
+0.4068\\
+0.4187\\
+0.3997\\
+0.3965\\
+0.4046\\
+0.4064\\
+0.3895\\
+0.3855\\
+0.4035\\
+0.4151\\
+0.4032\\
+0.3960\\
+0.4001\\
+0.4053\\
+0.4033\\
+0.4107\\
+0.4074\\
+0.4007\\
+0.4047\\
+0.4069\\
+0.3875\\
+0.4063\\
+0.4026\\
+0.4071\\
+0.3949\\
+0.3913\\
+0.4044\\
+0.3925\\
+0.4005\\
+0.4029\\
+0.4147\\
+0.4038\\
+0.3850\\
+0.4013\\
+0.3950\\
+0.4099\\
+0.3909\\
+0.4049\\
+0.4122\\
+0.4018\\
+0.3942\\
+0.3975\\
+0.4151\\
+0.3871\\
+0.3981\\
+0.4091\\
+0.4024\\
+0.4076\\
+0.4044\\
+0.3964\\
+0.4090\\
+0.4019\\
+0.3920\\
+0.3969\\
+0.3990\\
+0.4131\\
+0.4049\\
+0.4099\\
+0.3861\\
+0.3959\\
+0.4133\\
+0.4003\\
+0.3919\\
+0.3757\\
+0.4062\\
+0.3833\\
+0.3869\\
+0.3855\\
+0.4082\\
+0.3987\\
+0.4071\\
+0.4049\\
+0.3805\\
+0.3987\\
+0.4083\\
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Histograma de 100 mediciones de tiempos de recuperación para la población de Estudiantes, Académicos y Trabajadores de la UNAM.}
+\label{fig:histograma-unam-estabilidad}
+\end{figure}
+
+
+
+De manera similar, para la población de Ensanut recuperamos los datos de 25 variables incluida la clase de interés, y obtuvimos los siguientes tiempos:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth,
+  height=0.45\textwidth,
+  ybar,
+  xlabel={Tiempo de recuperación (s)},
+  ylabel={Frecuencia},
+  xmin=0.07, xmax=0.13,
+  grid=major,
+  enlarge x limits=0.02,
+]
+\addplot+[
+  hist={bins=12, data min=0.07, data max=0.13},
+  fill=orange!60,
+  draw=orange!85!black
+] table[row sep=\\,y index=0] {
+data\\
+0.0915\\
+0.0975\\
+0.0920\\
+0.0928\\
+0.0964\\
+0.1066\\
+0.0968\\
+0.1143\\
+0.1189\\
+0.0982\\
+0.1111\\
+0.1043\\
+0.0912\\
+0.0795\\
+0.1123\\
+0.0921\\
+0.0871\\
+0.1144\\
+0.0956\\
+0.1108\\
+0.0933\\
+0.1271\\
+0.0804\\
+0.1123\\
+0.1053\\
+0.0914\\
+0.0994\\
+0.0886\\
+0.1062\\
+0.1109\\
+0.1131\\
+0.1165\\
+0.1170\\
+0.0873\\
+0.0898\\
+0.0938\\
+0.1118\\
+0.1124\\
+0.1008\\
+0.0937\\
+0.1090\\
+0.1077\\
+0.1111\\
+0.0914\\
+0.1025\\
+0.1088\\
+0.0815\\
+0.0974\\
+0.1181\\
+0.1001\\
+0.1272\\
+0.0949\\
+0.1028\\
+0.0791\\
+0.0877\\
+0.1098\\
+0.1150\\
+0.0992\\
+0.1096\\
+0.1003\\
+0.1016\\
+0.0990\\
+0.0877\\
+0.1121\\
+0.1123\\
+0.1062\\
+0.0931\\
+0.0950\\
+0.0918\\
+0.1081\\
+0.1000\\
+0.0898\\
+0.1076\\
+0.1014\\
+0.0976\\
+0.1281\\
+0.1002\\
+0.1010\\
+0.0866\\
+0.0929\\
+0.1007\\
+0.0964\\
+0.0973\\
+0.1018\\
+0.0874\\
+0.1039\\
+0.1115\\
+0.1097\\
+0.1051\\
+0.1015\\
+0.1061\\
+0.1197\\
+0.1065\\
+0.1049\\
+0.0984\\
+0.1017\\
+0.1210\\
+0.0746\\
+0.1097\\
+0.0911\\
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Histograma de 100 mediciones de tiempos de recuperación para la población de Ensanut.}
+\label{fig:histograma-ensanut-estabilidad}
+\end{figure}
+
+Como podemos observar, en ambas poblaciones los tiempos de recuperación se encuentran bastante centradas alrededor de su media, 
+lo cual nos da una buena indicación de que el sistema es estable.
+
+\FloatBarrier
+
+
+
+\subsection{5.3 Comparativa con la versión previa.}\label{5.3-comparativa-con-la-versión-previa.}
+
+
+En esta sección queremos contrastar los tiempos totales de construcción de modelos entre la versión previa a la optimización y la 
+versión aquí propuesta, para esto, consideraremos diferentes poblaciones así como diferentes cantidades de variables predictoras. 
+
+Estas mediciones contemplan la construcción completa de los modelos, es decir, desde la recuperación de datos, pasando por la 
+construcción de la estructura de datos S, la discretización de variables numéricas, el llenado del template con los conteos, así 
+como el cálculo de epsilon y score, hasta la devolución de los resultados al frontend.
+
+Con la población de Estudiantes, Académicos y Trabajadores de la UNAM, obtuvimos los siguientes tiempos totales 
+de construcción de modelos:
+
+\begin{table}[htbp]
+\centering
+\caption{Comparativa de tiempos totales de construcción de modelos entre versión previa y versión propuesta para la 
+población de Estudiantes, Académicos y Trabajadores de la UNAM.}
+\label{tab:comparativa-version-previa-propuesta}
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Versión & 5 variables & 10 variables & 15 variables & 20 variables & 25 variables \\
+\hline
+Versión previa &5.57  &6.68  &7.56  &8.38  &10.1  \\
+\hline
+Versión propuesta &5.57  &6.68  &7.56  &8.38  &10.1  \\
+\hline
+\end{tabular}
+\end{table}
+
+Con la población de Ensanut, obtuvimos los siguientes tiempos totales de construcción de modelos:
+\begin{table}[htbp]
+\centering
+\caption{Comparativa de tiempos totales de construcción de modelos entre versión previa y versión propuesta para la población de Ensanut.}
+\label{tab:comparativa-version-previa-propuesta-ensanut}
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Versión & 5 variables & 10 variables & 15 variables & 20 variables & 25 variables \\
+\hline
+Versión previa &5.57  &6.68  &7.56  &8.38  &10.1  \\
+\hline
+Versión propuesta &5.57  &6.68  &7.56  &8.38  &10.1  \\
+\hline
+\end{tabular}
+\end{table}
+
+Podemos observar que la versión propuesta es significativamente más rápida que la versión previa.
+
+
+
+\section{Capítulo 6. Conclusiones}\label{capuxedtulo-6.-conclusiones}
+Como conclusiones, se presentan algunos resultados interesantes que se obtuvieron a partir de la implementación del proyecto, 
+así como algunas limitaciones que se encontraron durante el desarrollo del proyecto, y finalmente algunas ideas de optimización 
+que se podrían implementar en un futuro para mejorar el rendimiento del sistema.
+
+\subsection{6.1 Resultados principales.}
+\subsection{6.2 Observaciones.}
+\subsection{6.3 Limitaciones y trabajo futuro.}
+
+Una de las limitantes del proyecto es que solamente se pueden crear modelos a partir 
+de las poblaciones displonibles en la plataforma, esto se busca resolver en un futuro permitiendo que el usuario pueda 
+subir sus propias poblaciones en algún formato en específico, y que la plataforma se encargue de procesar los datos y construir 
+los modelos correspondientes.
+
+Si bien el sistema propuesto es significativamente más rápido que la versión previa, aún hay margen de mejora, por ejemplo, 
+buscar la manera de optimizar la discretización de variables numéricas, pues es la parte que del sistema que tiene la mayor 
+complejidad temporal.
+Aunque con las poblaciones y número de variables actuales el sistema es bastante rápido, si se quisiera usar con poblaciones más 
+grandes, del orden de millones de observaciones, éste podría volverse lento.
 
 \end{document}
