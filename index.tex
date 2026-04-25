@@ -551,6 +551,8 @@ f(x)=
 \end{cases}
 \]
 
+
+
 \textbf{Esperanza.}
 
 Definición.
@@ -569,7 +571,7 @@ valores absolutos es convergente.
 
 La esperanza de una variable aleatoria se puede interpretar como el promedio ponderado de los posibles 
 valores que puede tomar la variable, donde los pesos son las probabilidades de cada valor. A la esperanza 
-también se le conoce como valor esperado o valor promedio. 
+también se le conoce como valor esperado o valor promedio y usualmente se le denota por $\mu$.
 
 \textbf{Varianza.}
 
@@ -589,8 +591,8 @@ cuando la integral es convergente.
 
 La varianza de una variable aleatoria se puede interpretar como una medida de dispersión de los posibles 
 valores que puede tomar la variable, es decir, mide que tan alejados están los valores de la variable respecto 
-a su esperanza. A la raiz cuadrada de la varianza $\sqrt{\text{Var}(X)}$ se le conoce como 
-desviación estándar.
+a su esperanza. Usualmente denotamos a la varianza por $\sigma^2$ y a la raiz cuadrada de la varianza 
+$ \sigma = \sqrt{\text{Var}(X)}$ se le conoce como desviación estándar.
 
 \textbf{Función generadora de momentos.}
 
@@ -603,6 +605,12 @@ Sea $X$ una variable aleatoria, definimos $M(t)$ la función generadora de momen
 $$M(t) = \mathbb{E}[e^{tX}]$$
 
 Para valores de $t$ para los cuales esta esperanza es finita.
+
+\textbf{Teorema del límite central.}
+Este teorema postula que si una sucesión de variables $X_1, X_2, \ldots , X_n$ son independientes 
+e idénticamente distribuidas con media $\mu$ y varianza finita $\sigma^2$, entonces la variable aleatoria 
+definida por $$Z = \dfrac{\sum_{i=1}^n X_i - \mu}{\sigma \sqrt{n}}$$ converge en distribución a una 
+variable aleatoria normal estándar, es decir, $Z \sim N(0,1)$.
 
 \textbf{Odds ratio.}
 
@@ -1102,10 +1110,10 @@ Sean $T,S: \mathbb{N} \to \mathbb{R}^+$ las funciones que representan la cantida
 de memoria utilizada por el algoritmo respectivamente, ambas en función del tamaño de la entrada $n$. 
 
 \textbf{Acceso a elemento de un arreglo.}\\
-\begin{verbatim}
+\begin{lstlisting}[style=pseudocodigo]
 def access_element(arr, index):
     return arr[index]
-\end{verbatim}
+\end{lstlisting}
 
 Notemos que $T(n) = 1$ para toda $n \in \mathbb{N}$, pues el algoritmo siempre realiza una sola 
 operación independientemente del tamaño o forma de la entrada, por lo tanto podemos acotar 
@@ -1121,13 +1129,13 @@ Por lo tanto, $S(n) = O(1)$, $S(n) = \Omega(1)$ y $S(n) = \Theta(1)$.
 El algoritmo de búsqueda lineal recorre un arreglo de tamaño $n$ de izquierda a derecha,
  para determinar si contiene un elemento específico.\\
 
-\begin{verbatim}
+\begin{lstlisting}[style=pseudocodigo]
 def linear_search(arr, target):
     for i in range(len(arr)):
         if arr[i] == target:
             return True
     return False
-\end{verbatim}
+\end{lstlisting}
 
 Al analizar este algoritmo podemos considerar que el mejor caso ocurre cuando sin importar el tamaño del arreglo
 el elemento a buscar siempre está en la primera posición del arreglo, así $T(n) = 1$ para toda $n \in \mathbb{N}$, por 
@@ -1146,7 +1154,7 @@ Este algoritmo tiene el mismo objetivo que la búsqueda lineal, pero cuenta con 
 La idea es dividir al arreglo en dos partes iguales y comparar el elemento a buscar con el elemento del medio del arreglo, 
 si son iguales el algoritmo devuelve True, si el elemento a buscar es menor que el elemento del medio, entonces se repite 
 el proceso con el subarreglo izquierdo, de lo contrario se repite el proceso con el subarreglo derecho.\\
-\begin{verbatim}
+\begin{lstlisting}[style=pseudocodigo]
 def binary_search(arr, target):
     left, right = 0, len(arr) - 1
     while left <= right:
@@ -1158,7 +1166,7 @@ def binary_search(arr, target):
         else:
             right = mid - 1
     return False
-\end{verbatim}  
+    \end{lstlisting}  
 
 De manera similar a la búsqueda lineal, el mejor caso ocurre cuando sin importar el tamaño del arreglo 
 el elemento a buscar se encuentra en la posición del medio del arreglo, entonces $T(n) = 1$ para toda $n \in \mathbb{N}$, 
@@ -1177,14 +1185,14 @@ El objetivo de este algoritmo es ordenar un arreglo de tamaño $n$ de menor a ma
 recorrer el arreglo de izquierda a derecha y comparar cada elemento con el siguiente, si el elemento 
 es mayor al siguiente, entonces se realiza un intercambio entre ambos elementos, de lo contrario 
 se deja el arreglo como está, este proceso se repite hasta que el arreglo quede ordenado.\\
-\begin{verbatim}
+\begin{lstlisting}[style=pseudocodigo]
 def bubble_sort(arr):
     n = len(arr)
     for i in range(n):
         for j in range(0, n-i-1):
             if arr[j] > arr[j+1]:
                 arr[j], arr[j+1] = arr[j+1], arr[j]
-\end{verbatim}
+\end{lstlisting}
 
 Para analizar este algoritmo, hagamos el conteo de operaciones que realiza. Sea arr un arreglo de tamaño $n$, 
 Primero fijemonos en qué ocurre dentro del ciclo for interno, el cual realiza una comparación entre dos 
