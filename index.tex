@@ -606,11 +606,79 @@ $$M(t) = \mathbb{E}[e^{tX}]$$
 
 Para valores de $t$ para los cuales esta esperanza es finita.
 
+\textbf{Proposición.}
+Sea X una variable aleatoria con función generadora de momentos $M(t)$, definida para valores de 
+$t$ en un intervalo abierto que contiene a cero. Entonces, todos los momentos de $X$ existen y además 
+$M(t)$ se puede escribir como la siguiente serie de potencias:
+$$M(t) = \sum_{n=0}^{\infty} \dfrac{t^n}{n!} \mathbb{E}[X^n]$$
+
+
+
+
+
 \textbf{Teorema del límite central.}
 Este teorema postula que si una sucesión de variables $X_1, X_2, \ldots , X_n$ son independientes 
 e idénticamente distribuidas con media $\mu$ y varianza finita $\sigma^2$, entonces la variable aleatoria 
-definida por $$Z = \dfrac{\sum_{i=1}^n X_i - \mu}{\sigma \sqrt{n}}$$ converge en distribución a una 
+definida por $$Z = \dfrac{\sum_{i=1}^n X_i - n\mu}{\sigma \sqrt{n}}$$ converge en distribución a una 
 variable aleatoria normal estándar, es decir, $Z \sim N(0,1)$.
+
+Demostración.
+Esta demostración esta basada en la propuesta por Lindeberg-Lévy, y la idea es calcular la función generadora 
+de momentos de $Z$ para después calcular el límite de ésta cuando $n$ tiene a infinito y hacer uso del teorema 
+de continuidad de las funciones generadoras de momentos para probar la convergencia en distribución.
+
+Primero veamos que se cumple lo siguiente:
+$$M_Z(t) = [M_{\dfrac{X - \mu}{\sigma}}(\dfrac{t}{\sqrt{n}})]^n$$
+
+Con X cualquiera de las variables $X_i$.
+
+Calculemos la función generadora de momentos de $Z$.
+
+\begin{align*}
+M_Z(t) &= \mathbb{E}[e^{tZ}] \\
+&= \mathbb{E}\left[e^{t\left(\dfrac{\sum_{i=1}^n X_i - n\mu}{\sigma \sqrt{n}}\right)}\right] \\
+&= \mathbb{E}\left[e^{\dfrac{t}{\sigma \sqrt{n}}\sum_{i=1}^n (X_i - \mu)}\right] \\
+&= \mathbb{E}\left[\prod_{i=1}^n e^{\dfrac{t}{\sigma \sqrt{n}}(X_i - \mu)}\right] \\
+&= \prod_{i=1}^n \mathbb{E}\left[e^{\dfrac{t}{\sigma \sqrt{n}}(X_i - \mu)}\right] \\
+&= \prod_{i=1}^n M_{\dfrac{X - \mu}{\sigma}}\left(\dfrac{t}{\sqrt{n}}\right) \\
+&= \left[M_{\dfrac{X - \mu}{\sigma}}\left(\dfrac{t}{\sqrt{n}}\right)\right]^n
+\end{align*}
+
+Ahora usaremos la propiedad de expresión en potencias de $M_{\dfrac{X - \mu}{\sigma}}(t)$.
+
+\begin{align*}
+M_Z(t) &= \mathbb{E}[e^{tZ}] \\
+&= \left[M_{\dfrac{X - \mu}{\sigma}}\left(\dfrac{t}{\sqrt{n}}\right)\right]^n \\
+&= (1 + \dfrac{t}{\sqrt{n}} \mathbb{E}(\dfrac{X - \mu}{\sigma}) + \dfrac{t^2}{2n} \mathbb{E}((\dfrac{X - \mu}{\sigma})^2) + \ldots)^n \\
+&= (1 + \dfrac{t^2}{2n} + o(\dfrac{t^2}{n}))^n
+\end{align*}
+
+Notemos que en el último paso hemos usado:
+
+$$\mathbb{E}\left(\dfrac{X - \mu}{\sigma}\right) = 0 \text{ pues } X \text{ está centrada en } \mu$$
+
+$$\mathbb{E}\left(\left(\dfrac{X - \mu}{\sigma}\right)^2\right) = 1 \text{ pues es la varianza de la variable estandarizada}$$
+
+Los términos de orden $O(t^3/n^{3/2})$ y superiores se absorben en $o(t^2/n)$.
+
+Finalmente, calculemos el límite de $M_Z(t)$ cuando $n$ tiene a infinito.
+\begin{align*}
+\lim_{n \to \infty} M_Z(t) &= \lim_{n \to \infty} (1 + \dfrac{t^2}{2n} + o(\dfrac{t^2}{n}))^n \\
+&= \lim_{n \to \infty} \left[\left(1 + \dfrac{t^2}{2n} + o(\dfrac{t^2}{n})\right)^{\dfrac{2n}{t^2}}\right]^{\dfrac{t^2}{2}} \\
+&= e^{\dfrac{t^2}{2}}
+\end{align*}
+
+Para justificar este límite, nótese que en la segunda línea reescribimos $(1 + \frac{t^2}{2n} + o(\frac{t^2}{n}))^n$ en la forma $(u^{k})^{1/k}$ donde $u = (1 + \frac{t^2}{2n} + o(\frac{t^2}{n}))$ y $k = \frac{2n}{t^2}$. Al tomar el límite, la base $u \to 1$ pero el exponente $k \to \infty$, por lo que se aplica el límite fundamental:
+
+$$\lim_{k \to \infty} \left(1 + \dfrac{x}{k} + o\left(\dfrac{x}{k}\right)\right)^k = e^x$$
+
+En nuestro caso, $x = \frac{t^2}{2}$, lo que produce $e^{t^2/2}$.
+
+Así, llegamos a que la función generadora de momentos de $Z$ converge a $$M_Z(t) = e^{t^2/2}$$
+La cual coincide con la función generadora de momentos de una variable aleatoria normal estándar $N(0,1)$.
+Por lo tanto, usando el teorema de continuidad de las funciones generadoras de momentos, hemos probado que 
+$$Z = \dfrac{\sum_{i=1}^n X_i - n\mu}{\sigma \sqrt{n}} \xrightarrow{d} N(0,1)$$
+
 
 \textbf{Odds ratio.}
 
