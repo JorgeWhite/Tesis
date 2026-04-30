@@ -7,6 +7,7 @@
 ]{article}
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
+\usepackage{amsthm}
 \usepackage{listings}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
@@ -15,7 +16,10 @@
 \usepackage{placeins}
 \usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
 \usepackage{setspace}
-\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\setcounter{secnumdepth}{1} % keep section counter for theorem numbering
+\makeatletter
+\renewcommand{\@seccntformat}[1]{}
+\makeatother
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -59,6 +63,18 @@
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
 
+\newtheoremstyle{teoremaBreak}
+  {6pt}{6pt}
+  {\normalfont}{}{
+  \bfseries}{.}{\newline}{\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+\theoremstyle{teoremaBreak}
+\newtheorem{teorema}{Teorema}[section]
+\theoremstyle{plain}
+\newtheorem{proposicion}[teorema]{Proposición}
+\theoremstyle{definition}
+\newtheorem{definicion}[teorema]{Definición}
+\newtheorem{ejemplo}[teorema]{Ejemplo}
+
 \lstdefinestyle{pseudocodigo}{
   backgroundcolor=\color{gray!15},
   basicstyle=\ttfamily\small,
@@ -90,10 +106,10 @@ sistemas de almacenamiento para el proyecto Conductome.}
 \tableofcontents
 \newpage
 
-\section{Capítulo 1. Introducción}\label{capuxedtulo-1.-introducciuxf3n}
+\section{Capítulo 1. Introducción}\label{capítulo-1.1-introducción}
 
-\subsection{\texorpdfstring{\textbf{1 Contexto del proyecto Conductoma y
-Project42.}}{1 Contexto del proyecto Conductoma y Project42.}}\label{contexto-del-proyecto-conductoma-y-project42.}
+\subsection{\texorpdfstring{1.1 Contexto del proyecto Conductoma y
+Project42.}{1 Contexto del proyecto Conductoma y Project42.}}\label{contexto-del-proyecto-conductoma-y-project42.}
 
 La idea principal del proyecto Conductome y de Project42 es,
 considerando que todo lo que nos rodea está ahí por una cadena de
@@ -216,24 +232,23 @@ Matemáticos.}\label{capuxedtulo-2.-preliminares-matemuxe1ticos.}
 
 En este capítulo se presentan los fundamentos matemáticos necesarios
 para el desarrollo del trabajo. Se asume que el lector cuenta con
-conocimientos básicos de probabilidad, estadística y análisis de
-algoritmos, ya que se profundizará únicamente los conceptos directamente
+ciertos conocimientos de calculo diferencial e integral, así como 
+de álgebra lineal y estadística, ya que se profundizará únicamente los conceptos directamente
 relacionados con los proyectos Conductome y Project42.
+
+El principal objetivo de este capítulo es presentar y demostrar el teorema central 
+del límite, que será utilizado posteriormente para justificar la construcción de las 
+métricas Epsilon y Score, así como para entender el comportamiento de estas métricas.
 
 Empezando con conceptos como minería de datos, con el fin de
 contextualizar el uso de modelos estadísticos en conjuntos de datos con
-muchas variables (multidimensionales) . Después se ven conceptos básicos
-de probabilidad y estadística que fundamentan los modelos de
-clasificación usando las métricas Epsilon y Score.
+muchas variables (multidimensionales) . Después se definen conceptos fundamentales 
+como axiomas de probabilidad, sigma álgebra, probabilidad condicional, independencia de eventos, 
+variables aleatorias, esperanza, varianza, función generadora de momentos, entre otros.
 
-Se introduce el teorema de Bayes así como del clasificador basado en
-éste Naive Bayes, el cual es fundamental para la construcción del
-sistema usado en Project42. Se analizan sus variantes para casos
-continuos y limitantes en términos de clasificación.
-
-Se definen formalmente las métricas Epsilon y Score anteriormente
-mencionadas y se analiza su desempeño al usarse para la creación de un
-clasificador binario.
+Se presentan algunos resultados importantes como el teorema de Bayes así como 
+propiedades de variables aleatorias, de esperanza y varianza, otro resultado importante es el de 
+la continuidad de las funciones generadoras de momentos, para así poder probar el teorema del límite central.
 
 Finalmente se desarrollan algunos criterios para la evaluación de
 modelos, es decir, buscamos formas para concluir si un modelo es
@@ -265,8 +280,8 @@ entender mejor el alto porcentaje de personas con enfermedades
 cardiovasculares como obesidad e hipertensión en México.
 
 \subsection{2.2 Conceptos básicos.}\label{conceptos-buxe1sicos.}
-
-\textbf{Axiomas de probabilidad.}
+\begin{definicion}
+\textbf{Función de Probabilidad.}
 
 Recordemos que un axioma es una proposición que se toma como verdadera y
 sobre el cual se fundamentan diferentes resultados. Decimos que $\mathbb{P} \colon \Omega \to [0, 1]$ es una
@@ -287,8 +302,11 @@ función de probabilidad si cumple con los siguientes axiomas.
   \mathbb{P}\left(\bigcup_{i=1}^{\infty} A_i\right) = \sum_{i=1}^{\infty} \mathbb{P}(A_i)
   \]
 \end{enumerate} 
+\end{definicion}
 \medskip
 
+\begin{definicion}
+  
 \noindent\textbf{Sigma-álgebra.}
 
 La idea de una sigma-álgebra es un conjunto que agrupa a todos los
@@ -308,6 +326,7 @@ propiedades:
 \item
   Si $A_1, A_2, \ldots \in F$ entonces la unión numerable pertenece a $F$
 \end{enumerate}
+\end{definicion}
 
 A los elementos de F se les llama eventos.
 
@@ -320,8 +339,32 @@ Un espacio de probabilidad es una terna $(\Omega, F, \mathbb{P})$ donde $\Omega$
 conjunto, $F$ es una sigma-álgebra de subconjuntos de $\Omega$ y $\mathbb{P}$ es una función
 de probabilidad definida sobre F.
 
+\begin{definicion}
 \textbf{Sigma álgebra de Borel.}
 
+En el caso de que $\Omega$ sea el conjunto de los números reales, entonces una sigma-álgebra que nos va a 
+ser muy útil es la sigma-álgebra de Borel, que es la sigma-álgebra generada por los intervalos de la forma
+${(-\infty, a]}$ con $a \in \mathbb{R}$. De manera más formal, definimos a la sigma-álgebra de Borel, 
+denotada por $\mathcal{B}(\mathbb{R})$:
+
+Sea $\Omega = \mathbb{R}$, decimos que $\mathcal{B}(\mathbb{R})$ es la sigma-álgebra de Borel 
+si es la mínima sigma=álgebra de subconjuntos de $\mathbb{R}$ que contiene a todos los intervalos de la 
+forma $(-\infty, a]$ con $a \in \mathbb{R}$. Es decir,
+$$\mathcal{B}(\mathbb{R}) = \sigma(\{(-\infty, a] \mid a \in \mathbb{R}\}).$$
+
+Donde $\sigma$ denota que se está tomando la mínima sigma-álgebra generada por la colección 
+$\{(-\infty, a] \mid a \in \mathbb{R}\}$, donde "mínimo" hace referencia a que si $F$ es una sigma-álgebra 
+de subconjuntos de $\mathbb{R}$ tal que $\{(-\infty, a] \mid a \in \mathbb{R}\} \subseteq F$, 
+entonces $\mathcal{B}(\mathbb{R}) \subseteq F$.
+\end{definicion}
+
+Usualmente se refiere a los elementos de $\mathcal{B}(\mathbb{R})$ como borelianos de $\mathbb{R}$.
+
+Podemos notar que los borelianos de $\mathbb{R}$ incluyen a los intervalos de la forma 
+$[a, b)$, $(a, b]$, $(a, b)$, $[a, b]$, $(-\infty, a)$, $(a, \infty)$, ${{a}}$, $\mathbb{N}$, $\mathbb{Q}$, 
+$\mathbb{R}$, $\mathbb{Z}$, $\mathbb{R} \setminus \mathbb{Q}$, entre otros.
+
+\begin{definicion}
 \textbf{Probabilidad condicional.}
 
 La probabilidad condicional es un concepto sencillo pero que es muy útil
@@ -336,6 +379,7 @@ como:
 \[
 \mathbb{P}(A\mid B) = \dfrac{\mathbb{P}(A\cap B)}{\mathbb{P}(B)}
 \]
+\end{definicion}
 
 La idea intuitiva de la probabilidad condicional es considerar un evento
 B que ya ha ocurrido y ver cómo esta información adicional influye sobre
@@ -345,8 +389,6 @@ Uno puede considerar que usar la probabilidad condicional $\mathbb{P}(A\mid B)$
 es como reducir el espacio muestral $\Omega$ al evento $B$, de tal forma que
 cualquier evento que ocurra fuera de B tiene probabilidad condicional
 cero.
-
-\textbf{Teorema de Bayes.}
 
 El teorema de Bayes es uno de esos resultados fundamentales en la teoría
 de la probabilidad, ya que, permite calcular probabilidades
@@ -359,11 +401,13 @@ que tan probable es que una persona pertenezca a una clase de interés
 dado un conjunto de variables explicativas, probabilidad que
 eventualmente será útil para la construcción de epsilon y score.
 
+\begin{teorema}[Bayes]
 Sean $A$ y $B$ dos eventos tales que $\mathbb{P}(B) > 0$. Entonces:
 
 \[
 \mathbb{P}(A \mid B) = \dfrac{\mathbb{P}(B \mid A)\,\mathbb{P}(A)}{\mathbb{P}(B)}
 \]
+\end{teorema}
 
 \textbf{Demostración:}
 
@@ -406,13 +450,12 @@ cierta clase (individuo con diabetes, obesidad, sobrepeso, etc), y la
 evidencia agregada son los valores observados en las diferentes
 variables explicativas (edad, actividad física, alimentación, etc).
 
+\begin{definicion}
 \textbf{Independencia de eventos.}
 
 El concepto de independencia de eventos representa la idea de que la ocurrencia de un evento no afecta 
 la probabilidad de ocurrencia de otro evento. Este concepto ayuda a simplificar el cálculo de algunas 
 probabilidades.
-
-Definición.
 
 Sean $A$ y $B$ dos eventos, decimos que $A$ y $B$ son independientes si se cumple la igualdad:
 $$\mathbb{P}(A \cap B) = \mathbb{P}(A)\,\mathbb{P}(B).$$
@@ -422,7 +465,9 @@ Si a esta definición le agregamos la hipotesis de que $\mathbb{P}(B) > 0$, ento
 $$\mathbb{P}(A \mid B) = \mathbb{P}(A).$$
 
 Esto es, que la ocurrencia de $B$ no afecta la probabilidad del evento $A$.
+\end{definicion}
 
+\begin{definicion}
 \textbf{Variable aleatoria discreta.}
 
 Sea $(\Omega, F, \mathbb{P})$ un espacio de probabilidad. Definimos una variable
@@ -434,6 +479,7 @@ X:\Omega \to \mathbb{R}
 \]
 tal que para cualquier elemento de la sigma álgebra de Borel $B$, la
 imagen inversa $X^{-1}(B) \in F$.
+\end{definicion}
 
 (Notación: $(X \in A) = \{w \in \Omega \mid X(w) \in A\}$, que en otras
 palabras es la imagen inversa de $A$ bajo $X$. De igual manera con $(X \in (a,
@@ -448,7 +494,7 @@ considerar a las variables aleatorias como una pregunta o medición a los
 resultados de un experimento aleatorio y cuya respuesta es un número
 real. Para ilustrar la idea veamos un par de ejemplos.
 
-\textbf{Ejemplo 1.}
+\begin{ejemplo}
 
 Consideremos el experimento aleatorio de un volado, esto es, lanzar una
 moneda equilibrada al aire y ver cuál es la cara que está mirando hacía
@@ -488,8 +534,9 @@ aleatoria. Con esto podemos empezar a calcular algunas probabilidades.
 = \mathbb{P}(\{\text{Cruz},\text{Cara}\})
 = 1.
 \end{align*}
+\end{ejemplo}
 
-\textbf{Ejemplo 2.}
+\begin{ejemplo}
 
 Consideremos el experimento aleatorio de lanzar dos dados equilibrados.
 Aquí nuestro espacio muestral queda definido por pares ordenados (a,b)
@@ -503,7 +550,7 @@ de la siguiente manera:
 La sigma-álgebra de $\Omega$ es $F = \mathbb{P}(\Omega)$, la potencia de $\Omega$.
 
 Y la función de probabilidad considera dos dados justos y la definimos
-como
+como:
 \[
 \mathbb{P}(\{(a,b)\}) = \tfrac{1}{36}, \qquad \forall (a,b) \in \Omega.
 \]
@@ -521,13 +568,15 @@ Con esto, podemos calcular algunas probabilidades:
 &= \tfrac{6}{36} = \tfrac{1}{6}.
 \end{align*}
 Este último paso se obtiene por aditividad de $\mathbb{P}$.
+\end{ejemplo}
 
 A pesar del nombre, una variable aleatoria no es variable ni aleatoria,
 pero el nombre se justifica al considerar que los diferentes resultados
 de un experimento aleatorio son los diferentes números reales x que la
 función X puede tomar.
 
-Espacio de probabilidad discreto.
+\begin{definicion}
+\textbf{Espacio de Probabilidad Discreto.}  
 
 Sea $(\Omega,F,\mathbb{P})$ un espacio de probabilidad, donde $\Omega$ es un conjunto finito o
 numerable de resultados. $F$ es la sigma-álgebra de subconjuntos de $\Omega$
@@ -536,10 +585,10 @@ y $\mathbb{P}$ es una función de probabilidad sobre $F$.
 En el contexto de este trabajo se considerarán únicamente espacios de
 probabilidad discretos. \textbf{** Investigar por qué es importante que
 NB funciona mejor con espacios discretos.}
+\end{definicion}
 
-\textbf{Función de probabilidad.}
-
-Definición.
+\begin{definicion}
+\textbf{Función de Probabilidad.}
 
 Sea $X$ una variable aleatoria discreta con valores posibles $x_1, x_2, \ldots$ Definimos la función de 
 probabilidad de $X$, denotada por $f(x): \mathbb{R} \to \mathbb{R}$ como:
@@ -550,12 +599,20 @@ f(x)=
 0, & \text{en otro caso.}
 \end{cases}
 \]
+\end{definicion}
+
+\begin{definicion}
+\textbf{Función de Distribución.}
+
+Sea $X$ una variable aleatoria, definimos la función de distribución de $X$, denotada por
+ $F(x): \mathbb{R} \to [0,1]$ como:
+$$F(x) = \mathbb{P}(X \leq x)$$
+\end{definicion}
+\medskip
 
 
-
-\textbf{Esperanza.}
-
-Definición.
+\begin{definicion}
+\textbf{Esperanza}
 
 Sea $X$ una variable aleatoria discreta con función de probabilidad $f$. Definimos la esperanza de $X$ como:
 $$\mathbb{E}[X] = \sum_{x} x\,f(x)$$
@@ -572,10 +629,10 @@ valores absolutos es convergente.
 La esperanza de una variable aleatoria se puede interpretar como el promedio ponderado de los posibles 
 valores que puede tomar la variable, donde los pesos son las probabilidades de cada valor. A la esperanza 
 también se le conoce como valor esperado o valor promedio y usualmente se le denota por $\mu$.
+\end{definicion}
 
-\textbf{Varianza.}
-
-Definición.
+\begin{definicion}
+\textbf{Varianza}
 
 Sea $X$ una variable aleatoria discreta con esperanza $\mathbb{E}[X]$ y función de probabilidad $f$. 
 Definimos la varianza de $X$ como:
@@ -593,46 +650,114 @@ La varianza de una variable aleatoria se puede interpretar como una medida de di
 valores que puede tomar la variable, es decir, mide que tan alejados están los valores de la variable respecto 
 a su esperanza. Usualmente denotamos a la varianza por $\sigma^2$ y a la raiz cuadrada de la varianza 
 $ \sigma = \sqrt{\text{Var}(X)}$ se le conoce como desviación estándar.
+\end{definicion}
 
-\textbf{Función generadora de momentos.}
+\begin{proposicion}
+Sean $X$ y $Y$ dos variables aleatorias independientes y sean $f(x)$ y $g(x)$ dos funciones tales que el 
+producto $f(X)g(Y)$ es una variable aleatoria con esperanza finita, entonces:
+$$\mathbb{E}[f(X)g(Y)] = \mathbb{E}[f(X)] \cdot \mathbb{E}[g(Y)]$$ 
+\end{proposicion}
+
+\textbf{Demostración.}
+
+Usando la independencia de $X$ y $Y$ y la definición de esperanza, tenemos que:
+\begin{align*}
+\mathbb{E}[f(X)g(Y)] &= \sum_{x} \sum_{y} f(x)g(y) \mathbb{P}(X = x, Y = y) \\
+&= \sum_{x} \sum_{y} f(x)g(y) \mathbb{P}(X = x) \cdot \mathbb{P}(Y = y) \\
+&= \left(\sum_{x} f(x) \mathbb{P}(X = x)\right) \cdot \left(\sum_{y} g(y) \mathbb{P}(Y = y)\right) \\
+&= \mathbb{E}[f(X)] \cdot \mathbb{E}[g(Y)]
+\end{align*}
+
+\begin{definicion}
+\textbf{Función Generadora de Momentos.}
 
 Esta es otra función útil que se calcula sobre algunas variables aleatorias y en ésta podemos incluir 
 tanto variables discretas como continuas.
-
-Definición.
 
 Sea $X$ una variable aleatoria, definimos $M(t)$ la función generadora de momentos de $X$ como:
 $$M(t) = \mathbb{E}[e^{tX}]$$
 
 Para valores de $t$ para los cuales esta esperanza es finita.
+\end{definicion}
 
-\textbf{Proposición.}
+\begin{proposicion}
+Sean $X$ y $Y$ dos variables aleatorias independientes con funciones generadoras de momentos $M_X(t)$ y $M_Y(t)$ 
+respectivamente, entonces:
+$$M_{X + Y}(t) = M_X(t) \cdot M_Y(t)$$
+\end{proposicion}
+
+\textbf{Demostración.}
+Usando la definición de función generadora de momentos y la independencia de $X$ y $Y$ tenemos que:
+\begin{align*}
+M_{X + Y}(t) &= \mathbb{E}[e^{t(X + Y)}] \\
+&= \mathbb{E}[e^{tX} \cdot e^{tY}] \\
+&= \mathbb{E}[e^{tX}] \cdot \mathbb{E}[e^{tY}] \\
+&= M_X(t) \cdot M_Y(t)
+\end{align*}
+
+
+
+
+\begin{proposicion}
 Sea X una variable aleatoria con función generadora de momentos $M(t)$, definida para valores de 
 $t$ en un intervalo abierto que contiene a cero. Entonces, todos los momentos de $X$ existen y además 
 $M(t)$ se puede escribir como la siguiente serie de potencias:
 $$M(t) = \sum_{n=0}^{\infty} \dfrac{t^n}{n!} \mathbb{E}[X^n]$$
+\end{proposicion}
+
+\textbf{Demostración.}
+
+Para demostrar esta proposición, vamos a usar desarrollar la serie de Taylor de $e^{tX}$ alrededor 
+del cero y evaluada en $tX$, con $t \in (-\delta, \delta)$ para algún $\delta > 0$. Esto es:
+$$e^{tX} = \sum_{n=0}^{\infty} \dfrac{(tX)^n}{n!} = \sum_{n=0}^{\infty} \dfrac{t^n}{n!} X^n$$
+
+Ahora, tomando la esperanza de ambos lados tenemos:
+\begin{align*}
+M(t) &= \mathbb{E}[e^{tX}] \\
+&= \mathbb{E}\left[\sum_{n=0}^{\infty} \dfrac{t^n}{n!} X^n\right] \\
+&= \sum_{n=0}^{\infty} \mathbb{E}\left[ \dfrac{t^n}{n!} X^n\right] \\
+&= \sum_{n=0}^{\infty} \dfrac{t^n}{n!} \mathbb{E}[X^n]
+\end{align*}
+
+En el penúltimo paso podemos hacer el intercambio de la suma y la esperanza porque 
+la serie de potencias converge absolutamente para $t \in (-\delta, \delta)$, 
+lo cual implica que la serie de potencias de $e^{tX}$ también converge absolutamente para 
+$t \in (-\delta, \delta)$, y por lo tanto, podemos usar el **teorema de convergencia dominada** para 
+justificar el intercambio de la suma y la esperanza.
+
+\begin{teorema}[Continuidad de las funciones generadoras de momentos]
+Sea $X_1, X_2, \ldots$ una sucesion de variables aleatorias con funciones generadoras de momentos
+ $M_1, M_2, \ldots$ respectivamente. Sea $X$ una variable aleatoria con función generadora de momentos 
+ $M$, si sucede que para cada $t \in (-s, s)$ con $s > 0$. 
+$$\lim_{n \to \infty} M_n(t) = M(t)$$
+Entonces, para todo punto de $x$ donde la función de distribución de X, $F_X(x)$ es continua se tiene que:
+$$\lim_{n \to \infty} F_{X_n}(x) = F_X(x)$$
+A esta propiedad se le llama convergencia en distribución de $X_n$ a $X$ y se denota 
+por $X_n \xrightarrow{d} X$.
+\end{teorema}
 
 
 
 
-
-\textbf{Teorema del límite central.}
+\begin{teorema}[Límite central]
 Este teorema postula que si una sucesión de variables $X_1, X_2, \ldots , X_n$ son independientes 
 e idénticamente distribuidas con media $\mu$ y varianza finita $\sigma^2$, entonces la variable aleatoria 
 definida por $$Z = \dfrac{\sum_{i=1}^n X_i - n\mu}{\sigma \sqrt{n}}$$ converge en distribución a una 
 variable aleatoria normal estándar, es decir, $Z \sim N(0,1)$.
+\end{teorema}
 
-Demostración.
+\textbf{Demostración.}
+
 Esta demostración esta basada en la propuesta por Lindeberg-Lévy, y la idea es calcular la función generadora 
 de momentos de $Z$ para después calcular el límite de ésta cuando $n$ tiene a infinito y hacer uso del teorema 
 de continuidad de las funciones generadoras de momentos para probar la convergencia en distribución.
 
 Primero veamos que se cumple lo siguiente:
-$$M_Z(t) = [M_{\dfrac{X - \mu}{\sigma}}(\dfrac{t}{\sqrt{n}})]^n$$
+$$M_Z(t) = \left[M_{\dfrac{X - \mu}{\sigma}}(\dfrac{t}{\sqrt{n}})\right]^n$$
 
 Con X cualquiera de las variables $X_i$.
 
-Calculemos la función generadora de momentos de $Z$.
+Calculemos la función generadora de momentos de $Z$
 
 \begin{align*}
 M_Z(t) &= \mathbb{E}[e^{tZ}] \\
@@ -680,16 +805,11 @@ Por lo tanto, usando el teorema de continuidad de las funciones generadoras de m
 $$Z = \dfrac{\sum_{i=1}^n X_i - n\mu}{\sigma \sqrt{n}} \xrightarrow{d} N(0,1)$$
 
 
-\textbf{Odds ratio.}
+\begin{definicion}
+\textbf{Odds Ratio.}
 
-Definición:
-
-Sean $X$ y $C$ dos vectores aleatorios.
-
-Le llamamos la proporción posterior de $C_1$ respecto a $C_2$ a la proporción
-de densidad posterior $\mathbb{P}(C \mid X)$ evaluada en los puntos $C_1$ y $C_2$.
-
-Esto es:
+Sean $X$ y $C$ dos vectores aleatorios, le llamamos la proporción posterior de $C_1$ respecto a $C_2$ a la proporción
+de densidad posterior $\mathbb{P}(C \mid X)$ evaluada en los puntos $C_1$ y $C_2$, esto es:
 
 \[
 \dfrac{\mathbb{P}(C_1 \mid X)}{\mathbb{P}(C_2 \mid X)}
@@ -703,6 +823,8 @@ reducir a lo siguiente:
 &= \dfrac{\dfrac{\mathbb{P}(C_1)\,\mathbb{P}(X\mid C_1)}{\mathbb{P}(X)}}{\dfrac{\mathbb{P}(C_2)\,\mathbb{P}(X\mid C_2)}{\mathbb{P}(X)}} \\
 &= \dfrac{\mathbb{P}(C_1)\,\mathbb{P}(X\mid C_1)}{\mathbb{P}(C_2)\,\mathbb{P}(X\mid C_2)}.
 \end{align*}
+
+\end{definicion}
 
 Usualmente esta expresión es utilizada con parámetros $C_1$ y $C_2$ discretos,
 tales que $C_2$ es el complemento de $C_1$.
