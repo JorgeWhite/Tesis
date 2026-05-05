@@ -252,9 +252,7 @@ la continuidad de las funciones generadoras de momentos, para así poder probar 
 
 Finalmente se desarrollan algunos criterios para la evaluación de
 modelos, es decir, buscamos formas para concluir si un modelo es
-``bueno'' para clasificar independientemente de sus datos. Así como
-nociones de complejidad algorítmica, útiles para determinar el costo
-computacional de los algoritmos posteriormente propuestos.
+``bueno'' para clasificar independientemente de sus datos.
 
 \subsection{2.1 Minería de datos.}\label{mineruxeda-de-datos.}
 
@@ -281,16 +279,18 @@ cardiovasculares como obesidad e hipertensión en México.
 
 \subsection{2.2 Conceptos básicos.}\label{conceptos-buxe1sicos.}
 \begin{definicion}
-\textbf{Función de Probabilidad.}
+\textbf{Medida de Probabilidad.}
 
 Recordemos que un axioma es una proposición que se toma como verdadera y
-sobre el cual se fundamentan diferentes resultados. Decimos que $\mathbb{P} \colon \Omega \to [0, 1]$ es una
-función de probabilidad si cumple con los siguientes axiomas.
+sobre el cual se fundamentan diferentes resultados. 
+
+Decimos que $\mathbb{P}$ es una
+medida de probabilidad si cumple con los siguientes axiomas.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  $\mathbb{P}(A) \geq 0$, para todo $A \subseteq \Omega$
+  $\mathbb{P}(A) \geq 0$
 \item
   $\mathbb{P}(\Omega) = 1$
 \item
@@ -328,7 +328,7 @@ propiedades:
 \end{enumerate}
 \end{definicion}
 
-A los elementos de F se les llama eventos.
+A los elementos de $F$ se les llama eventos.
 
 Un par de sigma-álgebras inmediatas son $\{\emptyset, \Omega\}$ y el conjunto potencia de Omega $\mathcal{P}(\Omega)$.
 
@@ -337,17 +337,19 @@ de probabilidad para un experimento aleatorio.
 
 Un espacio de probabilidad es una terna $(\Omega, F, \mathbb{P})$ donde $\Omega$ es un
 conjunto, $F$ es una sigma-álgebra de subconjuntos de $\Omega$ y $\mathbb{P}$ es una función
-de probabilidad definida sobre F.
+de probabilidad definida sobre $F$.
 
 \begin{definicion}
 \textbf{Sigma álgebra de Borel.}
 
-En el caso de que $\Omega$ sea el conjunto de los números reales, entonces una sigma-álgebra que nos va a 
-ser muy útil es la sigma-álgebra de Borel, que es la sigma-álgebra generada por los intervalos de la forma
-${(-\infty, a]}$ con $a \in \mathbb{R}$. De manera más formal, definimos a la sigma-álgebra de Borel, 
-denotada por $\mathcal{B}(\mathbb{R})$:
+Ahora definimos una sigma álgebra de subconjuntos de $\mathbb{R}$ que resulta ser de suma importancia para la probabilidad, 
+pues esta sigma-álgebra nos va a ayudar a que las funciones de probabilidad estén bien definidas.
+Queda fuera del alcanze de este trabajo el desarrollo de la teoría de la medida, y nos limitaremos a 
+mencionar que la idea de pedir $P(X \in B)$ con $B \subset \mathbb{R}$ no siempre tiene sentido, 
+pues existen conjuntos "no medibles" para los cuales no tiene sentido asignar una probabilidad, la sigma álgebra 
+de Borel nos da un dominio seguro donde la medida de probabilidad existe y es consistente.
 
-Sea $\Omega = \mathbb{R}$, decimos que $\mathcal{B}(\mathbb{R})$ es la sigma-álgebra de Borel 
+Sea $\Omega$ un conjunto, decimos que $\mathcal{B}(\mathbb{R})$ es la sigma-álgebra de Borel 
 si es la mínima sigma=álgebra de subconjuntos de $\mathbb{R}$ que contiene a todos los intervalos de la 
 forma $(-\infty, a]$ con $a \in \mathbb{R}$. Es decir,
 $$\mathcal{B}(\mathbb{R}) = \sigma(\{(-\infty, a] \mid a \in \mathbb{R}\}).$$
@@ -468,7 +470,7 @@ Esto es, que la ocurrencia de $B$ no afecta la probabilidad del evento $A$.
 \end{definicion}
 
 \begin{definicion}
-\textbf{Variable aleatoria discreta.}
+\textbf{Variable aleatoria.}
 
 Sea $(\Omega, F, \mathbb{P})$ un espacio de probabilidad. Definimos una variable
 aleatoria $X$ como una transformación del espacio de resultados $\Omega$ al
@@ -486,7 +488,7 @@ palabras es la imagen inversa de $A$ bajo $X$. De igual manera con $(X \in (a,
 b)) = \{w \in \Omega \mid a < X(w) < b\}$.)
 
 Una observación importante es que cuando $\Omega$ es a lo mas numerable y $F =
-\mathbb{P}(\Omega)$, entonces cualquier función $X:\Omega \to \mathbb{R}$ cumple con la
+\mathcal{P}(\Omega)$, entonces cualquier función $X:\Omega \to \mathbb{R}$ cumple con la
 definición de ser variable aleatoria.
 
 Detrás de esta definición que puede parecer muy abstracta, podemos
@@ -509,7 +511,7 @@ siguiente manera:
 X:F \to \mathbb{R}, \qquad X(\text{Cruz}) = 1, \quad X(\text{Cara}) = 0.
 \]
 
-Por la observación de arriba se sigue que X cumple con ser variable
+Como $F = \mathcal{P}(\Omega)$, se sigue que X es una variable
 aleatoria. Con esto podemos empezar a calcular algunas probabilidades.
 
 \begin{align*}
@@ -576,11 +578,11 @@ de un experimento aleatorio son los diferentes números reales x que la
 función X puede tomar.
 
 \begin{definicion}
-\textbf{Espacio de Probabilidad Discreto.}  
+\textbf{Espacio de Probabilidad.}  
 
 Sea $(\Omega,F,\mathbb{P})$ un espacio de probabilidad, donde $\Omega$ es un conjunto finito o
-numerable de resultados. $F$ es la sigma-álgebra de subconjuntos de $\Omega$
-y $\mathbb{P}$ es una función de probabilidad sobre $F$.
+numerable de resultados. $F$ es una sigma-álgebra de subconjuntos de $\Omega$
+y $\mathbb{P}$ es una medida de probabilidad sobre $F$.
 
 En el contexto de este trabajo se considerarán únicamente espacios de
 probabilidad discretos. \textbf{** Investigar por qué es importante que
@@ -590,8 +592,8 @@ NB funciona mejor con espacios discretos.}
 \begin{definicion}
 \textbf{Función de Probabilidad.}
 
-Sea $X$ una variable aleatoria discreta con valores posibles $x_1, x_2, \ldots$ Definimos la función de 
-probabilidad de $X$, denotada por $f(x): \mathbb{R} \to \mathbb{R}$ como:
+Sea ($\Omega, F, \mathbb{P}$) un espacio de probabilidad y sea $X$ una variable aleatoria discreta con valores posibles $x_1, x_2, \ldots$ Definimos la función de 
+probabilidad de $X$, denotada por $f: \mathbb{R} \to \mathbb{R}$ como:
 \[
 f(x)=
 \begin{cases}
@@ -600,6 +602,11 @@ f(x)=
 \end{cases}
 \]
 \end{definicion}
+
+Bajo esta definición, la probabilidad de un evento $A$ con una variable aleatoria como la usada 
+arriba se reduce al calculo de una suma.
+
+$$\mathbb{P}(X \in A) = \sum_{x \in A} f(x)$$
 
 \begin{definicion}
 \textbf{Función de Distribución.}
@@ -999,11 +1006,11 @@ predictibilidad de una clase de interés.
 La manera en que obtendremos epsilon será a través de un test de
 significancia.
 
-Sea $X_i$ una variable aleatoria y $C$ la clase de interés.
+Sean $X_i$ y $C$ variables aleatorias, donde $C$ es la clase de interés.
 
 Definimos la hipótesis nula $H_0: X_i \perp C$.
 
-Y definimos la variable aleatoria $K_i$ como el número de observaciones con
+Sea $K_i$ una variable aleatoria que representa el número de observaciones con
 la clase $C$ de entre las que tienen $X_i = x_i$.
 
 Con esto, podemos notar que $K_i \sim \text{Binomial}(N_{X_i}, p)$, con
@@ -1011,7 +1018,7 @@ $p = \mathbb{P}(C \mid X_i = x_i)$ y $N_{X_i}$ el número de observaciones con $
 
 Entonces bajo $H_0$, tenemos que $\mathbb{P}(C \mid X_i = x_i) = \mathbb{P}(C)$.
 
-Por lo tanto, $E(K_i) = N_{X_i}\,\mathbb{P}(C)$ y $\operatorname{Var}(K_i) = N_{X_i}\,\mathbb{P}(C)\,(1 -
+Por lo tanto, $\mathbb{E}(K_i) = N_{X_i}\,\mathbb{P}(C)$ y $\operatorname{Var}(K_i) = N_{X_i}\,\mathbb{P}(C)\,(1 -
 \mathbb{P}(C))$.
 
 Y la desviación estándar $\sigma = \sqrt{\operatorname{Var}(K_i)}$.
@@ -1019,10 +1026,26 @@ Y la desviación estándar $\sigma = \sqrt{\operatorname{Var}(K_i)}$.
 Con esto, definimos epsilon de la siguiente forma:
 
 \[
-\varepsilon = \dfrac{K_{i,\mathrm{obs}} - E(K_i)}{\sigma}
+\varepsilon = \dfrac{{K_i} - \mathbb{E}(K_i)}{\sigma}
 \]
 
-Por notación, consideramos $K_{i,obs} = N_{CX_i}$.
+Por notación, consideramos $K_{i} = N_{CX_i}$.
+
+Notemos que como $K_i \sim \text{Binomial}(N_{X_i}, p)$, $K_i$ se
+puede reescribir como suma de Bernoullis, es decir:
+
+\[
+K_i = \sum_{t = 1}^{N_{X_i}} Z_t, \qquad Z_t \sim \text{Bernoulli}(p).
+\]
+
+Así, cuando $N_{X_i}$ tiende a infinito podemos aplicar el \textbf{teorema central del límite}, el cual dice
+que:
+
+$$\dfrac{\sum_{t = 1}^{N_{X_i}} Z_t - N_{X_i} \cdot \mathbb{E}(Z_t)}{\sqrt{N_{X_i} \cdot \operatorname{Var}(Z_t)}} \sim N(0,1)$$
+
+Veamos que,
+$$\dfrac{\sum_{t = 1}^{N_{X_i}} Z_t - N_{X_i} \cdot \mathbb{E}(Z_t)}{\sqrt{N_{X_i} \cdot \operatorname{Var}(Z_t)}}
+= \dfrac{K_i - N_{X_i} \cdot p}{\sqrt{N_{X_i} \cdot p \cdot (1 - p)}} = \varepsilon$$
 
 Notemos que
 \[
@@ -1045,27 +1068,13 @@ Sustituyendo en $\varepsilon$:
 &= \dfrac{N_{X_i} \cdot \left(\mathbb{P}(C \mid X_i) - \mathbb{P}(C)\right)}{\sqrt{N_{X_i} \cdot \mathbb{P}(C) \cdot (1 - \mathbb{P}(C))}}
 \end{align*}
 
-Además, notemos que como $K_i \sim \text{Binomial}(N_{X_i}, p)$, $K_i$ se
-puede reescribir como suma de Bernoullis, es decir:
-
-\[
-K_i = \sum_{t = 1}^{N_{X_i}} Z_t, \qquad Z_t \sim \text{Bernoulli}(p).
-\]
-
-Así, cuando $N_{X_i}$ tiende a infinito (en la práctica, cuando es mayor a
-30) podemos aplicar el \textbf{teorema central del límite}, el cual dice
-que:
-
-\[
-\dfrac{K_i - E(K_i)}{\sqrt{\operatorname{Var}(K_i)}} \sim N(0,1)
-\]
-cuando
-$N_{X_i}$ tiende a infinito (o cuando es mayor a 30)
-
 Por lo tanto, bajo $H_0$ tenemos que $\varepsilon \sim \text{Normal}(0, 1)$,
-cuando $N_{X_i} > 30$.
+cuando $N_{X_i}  \to \infty$.
 
-Con esto, podemos concluir lo siguiente:
+
+
+En la práctica, basta considerar que $N_{X_i}$ es suficientemente grande (por ejemplo, $N_{X_i} > 30$), 
+con esto, podemos concluir lo siguiente:
 
 Si $|\varepsilon| < 1.96$, no rechazamos la hipótesis
 nula, es decir, no hay suficiente evidencia de dependencia entre $X_i = x_i$
